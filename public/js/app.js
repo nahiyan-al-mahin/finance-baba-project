@@ -6,6 +6,7 @@ import { startOnboarding } from './onboarding.js';
 import { googleAvailable, renderGoogleButton } from './google.js';
 import { icon } from './icons.js';
 import { addDays, openCalendar, renderWeekStrip, invalidateMarks } from './calendar.js';
+import { initSidebar, refreshSidebar } from './sidebar.js';
 
 const state = { user: null, today: null, date: null, unlockedUntil: 0, view: 'daily', entries: [] };
 
@@ -158,6 +159,7 @@ function initDaily() {
         form.elements.note.focus();
         toast(t('daily.added'));
         invalidateMarks();
+        refreshSidebar();
         await loadDay();
       } catch (err) {
         if (err.status === 401) return handleError(err);
@@ -225,6 +227,7 @@ async function editEntry(entry) {
   if (saved) {
     toast(t('daily.saved'));
     invalidateMarks();
+    refreshSidebar();
     loadDay().catch(handleError);
   }
 }
@@ -237,6 +240,7 @@ async function deleteEntry(entry) {
   if (done) {
     toast(t('daily.deleted'));
     invalidateMarks();
+    refreshSidebar();
     loadDay().catch(handleError);
   }
 }
@@ -306,6 +310,7 @@ function initSettings() {
         showFormError(form, null);
         const { user } = await patch('/auth/profile', { displayName: form.elements.displayName.value });
         state.user = user;
+        refreshSidebar();
         toast(t('set.nameSaved'));
       } catch (err) {
         showFormError(form, err);
@@ -371,10 +376,12 @@ async function boot() {
   initDaily();
   initReports({ getToday: () => state.today, onError: handleError });
   initSettings();
+  initSidebar({ getUser: () => state.user, getToday: () => state.today, onError: handleError });
   showView(location.hash.slice(1) || 'daily');
   await Promise.all([loadDay(), loadWarnings()]).catch(handleError);
 
   onLangChange(() => {
+    refreshSidebar();
     renderDayHeader();
     renderEntries(lastTotals);
     updateAddFormType($('#add-form').elements.type.value);

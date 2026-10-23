@@ -22,7 +22,35 @@
       <button class="icon-btn" type="button" data-action="toggle-theme" data-i18n-title="toggle.theme"><svg class="i show-light" aria-hidden="true"><use href="/img/icons.svg#moon"></use></svg><svg class="i show-dark" aria-hidden="true"><use href="/img/icons.svg#sun"></use></svg></button>
     </header>
 
-    <main class="container app-main">
+    <div class="app-shell">
+      <aside class="side side-left" aria-label="Overview">
+        <div class="card profile-card">
+          <span class="avatar" id="sb-avatar" aria-hidden="true"></span>
+          <div class="profile-text">
+            <strong id="sb-name"></strong>
+            <span class="muted small" id="sb-id"></span>
+          </div>
+        </div>
+
+        <nav class="card side-nav" aria-label="Main">
+          <button class="navbtn" data-view="daily"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calendar"></use></svg><span data-i18n="nav.daily">Daily</span></button>
+          <button class="navbtn" data-view="reports"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chart"></use></svg><span data-i18n="nav.reports">Reports</span></button>
+          <button class="navbtn" data-view="settings"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg><span data-i18n="nav.settings">Settings</span></button>
+        </nav>
+
+        <div class="card">
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#wallet"></use></svg></span><span data-i18n="side.thisMonth">This month</span></h2>
+          <p class="muted small side-sub" id="sb-month"></p>
+          <div class="mini-row"><span data-i18n="rep.income"></span><strong class="income num" id="sb-income">–</strong></div>
+          <div class="mini-row"><span data-i18n="rep.expense"></span><strong class="expense num" id="sb-expense">–</strong></div>
+          <div class="mini-row total"><span data-i18n="rep.net"></span><strong class="num" id="sb-net">–</strong></div>
+          <div class="meter" aria-hidden="true"><span id="sb-meter"></span></div>
+          <p class="small muted" id="sb-meter-text"></p>
+          <a class="btn btn-sm btn-block" id="sb-pdf" href="#"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#download"></use></svg> <span data-i18n="side.monthPdf">This month's PDF</span></a>
+        </div>
+      </aside>
+
+      <main class="container app-main">
       <div id="warnings" class="stack" style="margin-bottom: 1rem"></div>
 
       <!-- ================= DAILY ================= -->
@@ -212,7 +240,34 @@
           <button class="btn btn-danger btn-block" id="delete-account" type="button" data-i18n="set.deleteAccount"></button>
         </div>
       </section>
-    </main>
+      </main>
+
+      <aside class="side side-right" aria-label="Insights">
+        <div class="card">
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chart"></use></svg></span><span data-i18n="side.thisWeek">This week</span></h2>
+          <div class="mini-bars" id="sb-week"></div>
+          <div class="mini-row total"><span data-i18n="side.weekTotal">Spent this week</span><strong class="expense num" id="sb-week-total">–</strong></div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#pie"></use></svg></span><span data-i18n="side.topCats">Top spending this month</span></h2>
+          <div id="sb-top"></div>
+        </div>
+
+        <div class="card streak-card">
+          <span class="streak-badge" id="sb-streak-num">0</span>
+          <div>
+            <strong id="sb-streak-title"></strong>
+            <p class="small muted" id="sb-streak-sub"></p>
+          </div>
+        </div>
+
+        <div class="card tip-card">
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#bulb"></use></svg></span><span data-i18n="side.tip">Money tip</span></h2>
+          <p id="sb-tip"></p>
+        </div>
+      </aside>
+    </div>
 
     <nav class="bottomnav" aria-label="Main">
       <button class="navbtn" data-view="daily"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calendar"></use></svg><span data-i18n="nav.daily">Daily</span></button>
