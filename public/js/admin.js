@@ -1,6 +1,7 @@
 import { get, post } from './api.js';
 import { t, fmt, onLangChange } from './i18n.js';
 import { $, initChrome, toast, errorMessage, dialogAction, escapeHtml } from './ui.js';
+import { icon } from './icons.js';
 
 let users = [];
 let warnings = [];
@@ -27,7 +28,7 @@ function renderUsers() {
         ${cell('adm.failed', fmt.number(u.failedLogins))}
         ${cell('adm.pastEdits', fmt.number(u.pastEdits))}
         ${cell('adm.flags', u.flags.map((f) => `<span class="badge flag">${escapeHtml(t(`flag.${f}`))}</span>`).join(' ') || '–')}
-        <td><button class="btn" data-warn="${escapeHtml(u.id)}">⚠️ ${escapeHtml(t('adm.warn'))}${u.warnings ? ` (${fmt.number(u.warnings)})` : ''}</button></td>
+        <td><button class="btn" data-warn="${escapeHtml(u.id)}">${icon('alert')} ${escapeHtml(t('adm.warn'))}${u.warnings ? ` (${fmt.number(u.warnings)})` : ''}</button></td>
       </tr>`
         )
         .join('')
@@ -40,7 +41,7 @@ function renderWarnings() {
         .map(
           (w) => `
       <li class="entry">
-        <span class="entry-icon">${w.acknowledged ? '✅' : '⏳'}</span>
+        <span class="cat-tile entry-icon" style="--c:${w.acknowledged ? '#2f9e44' : '#f59f00'}">${icon(w.acknowledged ? 'check-circle' : 'clock')}</span>
         <div class="entry-body">
           <div class="entry-note">${escapeHtml(w.message)}</div>
           <div class="entry-meta">${escapeHtml(w.userId)} · ${fmt.dateTime(w.createdAt)} · ${escapeHtml(t(w.acknowledged ? 'adm.ackd' : 'adm.pending'))}</div>

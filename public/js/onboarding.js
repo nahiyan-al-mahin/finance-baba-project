@@ -1,14 +1,15 @@
 // "What is what" welcome slides, shown after the first sign-up and from Settings.
 import { t, onLangChange } from './i18n.js';
+import { icon } from './icons.js';
 
 const SLIDES = [
-  { art: '👋', key: 's1' },
-  { art: '✍️', key: 's2' },
-  { art: '🧮', key: 's3' },
-  { art: '📊', key: 's4' },
-  { art: '🔒', key: 's5' },
-  { art: '📄', key: 's6' },
-  { art: '🛡️', key: 's7' },
+  { art: 'wallet', key: 's1' },
+  { art: 'pencil', key: 's2' },
+  { art: 'calculator', key: 's3' },
+  { art: 'chart', key: 's4' },
+  { art: 'lock', key: 's5' },
+  { art: 'file', key: 's6' },
+  { art: 'shield', key: 's7' },
 ];
 
 export function startOnboarding(onFinish) {
@@ -39,7 +40,7 @@ export function startOnboarding(onFinish) {
     track.innerHTML = SLIDES.map(
       (s) => `
       <div class="onb-slide">
-        <div class="onb-art" aria-hidden="true">${s.art}</div>
+        <div class="onb-art">${icon(s.art)}</div>
         <h2>${t(`onb.${s.key}.title`)}</h2>
         <p>${t(`onb.${s.key}.body`)}</p>
       </div>`

@@ -1,4 +1,5 @@
 // English / Bangla translations and locale-aware formatting.
+import { icon } from './icons.js';
 const dict = {
   en: {
     appName: 'Finance Baba',
@@ -78,8 +79,10 @@ const dict = {
     'daily.totalSpentToday': "Today's total spending",
     'daily.prev': 'Previous day',
     'daily.next': 'Next day',
+    'daily.prevWeek': 'Previous week',
+    'daily.nextWeek': 'Next week',
     'daily.pickDate': 'Pick a date',
-    'daily.goToday': 'Go to today',
+    'daily.goToday': 'Today',
     'daily.edit': 'Edit',
     'daily.delete': 'Delete',
     'daily.editTitle': 'Edit entry',
@@ -305,8 +308,10 @@ const dict = {
     'daily.totalSpentToday': 'আজকের মোট খরচ',
     'daily.prev': 'আগের দিন',
     'daily.next': 'পরের দিন',
+    'daily.prevWeek': 'আগের সপ্তাহ',
+    'daily.nextWeek': 'পরের সপ্তাহ',
     'daily.pickDate': 'তারিখ বাছাই করুন',
-    'daily.goToday': 'আজকে যান',
+    'daily.goToday': 'আজ',
     'daily.edit': 'এডিট',
     'daily.delete': 'মুছুন',
     'daily.editTitle': 'এন্ট্রি এডিট',
@@ -530,7 +535,12 @@ export function categoryLabel(type, id) {
   return cat ? cat[getLang()] : id;
 }
 
-export function categoryIcon(type, id) {
+export function categoryColor(type, id) {
   const cat = (window.FB_CATEGORIES[type] || []).find((c) => c.id === id);
-  return cat ? cat.icon : '•';
+  return cat ? cat.color : '#868e96';
+}
+
+/** A raised, colour-tinted tile holding the category's icon. */
+export function categoryTile(type, id, cls = '') {
+  return `<span class="cat-tile ${cls}" style="--c:${categoryColor(type, id)}" aria-hidden="true">${icon(`cat-${id}`)}</span>`;
 }

@@ -1,13 +1,11 @@
 // Weekly / monthly / yearly analysis with Chart.js, plus PDF download links.
 import { get } from './api.js';
-import { t, fmt, getLang, categoryLabel, categoryIcon } from './i18n.js';
+import { t, fmt, getLang, categoryLabel, categoryTile, categoryColor } from './i18n.js';
 import { $, $$, escapeHtml } from './ui.js';
 
 const rs = { period: 'month', anchor: null, charts: {}, getToday: null };
 
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-const PALETTE = ['#0f766e', '#c2410c', '#2563eb', '#a21caf', '#ca8a04', '#15803d', '#db2777', '#4f46e5', '#0891b2', '#65a30d', '#9f1239', '#78716c'];
-const PALETTE_DARK = ['#2dd4bf', '#fb923c', '#60a5fa', '#e879f9', '#facc15', '#4ade80', '#f472b6', '#818cf8', '#22d3ee', '#a3e635', '#fb7185', '#a8a29e'];
 
 function shift(anchor, period, dir) {
   const d = new Date(`${anchor}T00:00:00Z`);
@@ -30,8 +28,8 @@ function catRows(list, type) {
     .map(
       (c) => `
       <div class="cat-row">
-        <span>${categoryIcon(type, c.category)} ${escapeHtml(categoryLabel(type, c.category))}</span>
-        <span class="bar ${type}"><span style="width:${Math.max(2, (c.pct / max) * 100)}%"></span></span>
+        <span class="row">${categoryTile(type, c.category, 'sm')} ${escapeHtml(categoryLabel(type, c.category))}</span>
+        <span class="bar"><span style="width:${Math.max(2, (c.pct / max) * 100)}%;--c:${categoryColor(type, c.category)}"></span></span>
         <span class="num">${fmt.money(c.amount)} <span class="muted small">${fmt.pct(c.pct)}</span></span>
       </div>`
     )
@@ -61,7 +59,6 @@ function insights(s) {
 }
 
 function drawCharts(s) {
-  const dark = document.documentElement.dataset.theme === 'dark';
   const text = css('--muted');
   const grid = css('--border');
   Chart.defaults.color = text;
@@ -76,8 +73,8 @@ function drawCharts(s) {
     data: {
       labels,
       datasets: [
-        { label: t('rep.income'), data: s.series.map((b) => b.income), backgroundColor: css('--income'), borderRadius: 4 },
-        { label: t('rep.expense'), data: s.series.map((b) => b.expense), backgroundColor: css('--expense'), borderRadius: 4 },
+        { label: t('rep.income'), data: s.series.map((b) => b.income), backgroundColor: css('--income'), borderRadius: 6 },
+        { label: t('rep.expense'), data: s.series.map((b) => b.expense), backgroundColor: css('--expense'), borderRadius: 6 },
       ],
     },
     options: {
@@ -104,12 +101,11 @@ function drawCharts(s) {
 
   rs.charts.cat?.destroy();
   const cats = s.expenseByCategory;
-  const colors = dark ? PALETTE_DARK : PALETTE;
   rs.charts.cat = new Chart($('#cat-chart'), {
     type: 'doughnut',
     data: {
       labels: cats.map((c) => categoryLabel('expense', c.category)),
-      datasets: [{ data: cats.map((c) => c.amount), backgroundColor: cats.map((_, i) => colors[i % colors.length]), borderColor: css('--surface'), borderWidth: 2 }],
+      datasets: [{ data: cats.map((c) => c.amount), backgroundColor: cats.map((c) => categoryColor('expense', c.category)), borderColor: css('--surface'), borderWidth: 3, hoverOffset: 8 }],
     },
     options: {
       maintainAspectRatio: false,

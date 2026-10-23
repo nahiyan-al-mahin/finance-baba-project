@@ -12,14 +12,14 @@
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="/app"><span class="brand-logo" aria-hidden="true">৳</span><span data-i18n="appName">Finance Baba</span></a>
+      <a class="brand" href="/app"><img class="brand-logo" src="/img/logo.svg" alt="" width="36" height="36" /><span data-i18n="appName">Finance Baba</span></a>
       <nav class="topnav" aria-label="Main">
-        <button class="navbtn" data-view="daily"><span class="icon">📅</span><span data-i18n="nav.daily">Daily</span></button>
-        <button class="navbtn" data-view="reports"><span class="icon">📊</span><span data-i18n="nav.reports">Reports</span></button>
-        <button class="navbtn" data-view="settings"><span class="icon">⚙️</span><span data-i18n="nav.settings">Settings</span></button>
+        <button class="navbtn" data-view="daily"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calendar"></use></svg><span data-i18n="nav.daily">Daily</span></button>
+        <button class="navbtn" data-view="reports"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chart"></use></svg><span data-i18n="nav.reports">Reports</span></button>
+        <button class="navbtn" data-view="settings"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg><span data-i18n="nav.settings">Settings</span></button>
       </nav>
       <button class="icon-btn" type="button" data-action="toggle-lang" data-i18n="toggle.lang">বাংলা</button>
-      <button class="icon-btn" type="button" data-action="toggle-theme" data-i18n-title="toggle.theme">🌙</button>
+      <button class="icon-btn" type="button" data-action="toggle-theme" data-i18n-title="toggle.theme"><svg class="i show-light" aria-hidden="true"><use href="/img/icons.svg#moon"></use></svg><svg class="i show-dark" aria-hidden="true"><use href="/img/icons.svg#sun"></use></svg></button>
     </header>
 
     <main class="container app-main">
@@ -27,31 +27,32 @@
 
       <!-- ================= DAILY ================= -->
       <section id="view-daily" class="stack" hidden>
-        <div class="card">
-          <div class="daynav">
-            <button class="icon-btn" id="day-prev" data-i18n-title="daily.prev">‹</button>
-            <div class="title">
-              <strong id="day-title"></strong>
-              <span id="day-badge" class="badge"></span>
-            </div>
-            <button class="icon-btn" id="day-next" data-i18n-title="daily.next">›</button>
+        <div class="card day-card">
+          <div class="day-head">
+            <button type="button" class="date-chip" id="day-open-cal" data-i18n-title="daily.pickDate">
+              <span class="date-chip-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calendar"></use></svg></span>
+              <span class="date-chip-text"><strong id="day-title"></strong><span id="day-sub"></span></span>
+              <svg class="i chev" aria-hidden="true"><use href="/img/icons.svg#chevron-down"></use></svg>
+            </button>
+            <span id="day-badge" class="badge"></span>
+            <button type="button" class="btn btn-sm" id="day-today" data-i18n="daily.goToday">Go to today</button>
           </div>
-          <div class="row wrap" style="justify-content: center; margin-top: 0.6rem">
-            <label class="sr-only" for="day-picker" data-i18n="daily.pickDate"></label>
-            <input type="date" id="day-picker" class="input" style="max-width: 200px" />
-            <button class="btn btn-ghost" id="day-today" data-i18n="daily.goToday">Go to today</button>
+          <div class="week-strip">
+            <button type="button" class="icon-btn" id="week-prev" data-i18n-title="daily.prevWeek"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chevron-left"></use></svg></button>
+            <div class="week-days" id="week-days"></div>
+            <button type="button" class="icon-btn" id="week-next" data-i18n-title="daily.nextWeek"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chevron-right"></use></svg></button>
           </div>
         </div>
 
         <div class="grid grid-3">
-          <div class="card stat expense"><div class="stat-label" data-i18n="daily.spent"></div><div class="stat-value" id="day-expense">৳0</div></div>
-          <div class="card stat income"><div class="stat-label" data-i18n="daily.earned"></div><div class="stat-value" id="day-income">৳0</div></div>
-          <div class="card stat net"><div class="stat-label" data-i18n="daily.balance"></div><div class="stat-value" id="day-net">৳0</div></div>
+          <div class="card stat expense"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#arrow-out"></use></svg></span><div class="stat-label" data-i18n="daily.spent"></div><div class="stat-value" id="day-expense">৳0</div></div>
+          <div class="card stat income"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#arrow-in"></use></svg></span><div class="stat-label" data-i18n="daily.earned"></div><div class="stat-value" id="day-income">৳0</div></div>
+          <div class="card stat net"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#wallet"></use></svg></span><div class="stat-label" data-i18n="daily.balance"></div><div class="stat-value" id="day-net">৳0</div></div>
         </div>
 
         <form class="card" id="add-form" novalidate>
           <div class="row-between wrap" style="margin-bottom: 0.85rem">
-            <h2 class="card-title" style="margin: 0" data-i18n="daily.addTitle">Add an entry</h2>
+            <h2 class="card-title" style="margin: 0"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#plus"></use></svg></span><span data-i18n="daily.addTitle">Add an entry</span></h2>
             <div class="segmented type-toggle" role="group">
               <button type="button" data-type="expense" aria-pressed="true" data-i18n="daily.expense">Expense</button>
               <button type="button" data-type="income" aria-pressed="false" data-i18n="daily.income">Income</button>
@@ -67,16 +68,16 @@
               <label for="add-amount" data-i18n="daily.amount">Amount</label>
               <input class="input" id="add-amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" required />
             </div>
-            <div class="field">
-              <label for="add-category" data-i18n="daily.category">Category</label>
-              <select class="input" id="add-category" name="category"></select>
-            </div>
           </div>
-          <button class="btn btn-primary btn-block" type="submit">＋ <span data-i18n="daily.add">Add</span></button>
+          <div class="field">
+            <span class="label" id="add-category-label" data-i18n="daily.category">Category</span>
+            <div class="cat-picker" id="add-category" role="radiogroup" aria-labelledby="add-category-label"></div>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#plus"></use></svg> <span data-i18n="daily.add">Add</span></button>
         </form>
 
         <div class="card">
-          <h2 class="card-title" data-i18n="daily.listTitle">Entries</h2>
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#list"></use></svg></span><span data-i18n="daily.listTitle">Entries</span></h2>
           <ul class="entry-list" id="entry-list"></ul>
           <div class="day-total">
             <span id="day-total-label"></span>
@@ -95,27 +96,27 @@
               <button type="button" data-period="year" aria-pressed="false" data-i18n="rep.year">Year</button>
             </div>
             <div class="daynav" style="flex: 1; min-width: 240px">
-              <button class="icon-btn" id="rep-prev" data-i18n-title="rep.prev">‹</button>
+              <button class="icon-btn" id="rep-prev" data-i18n-title="rep.prev"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chevron-left"></use></svg></button>
               <div class="title"><strong id="rep-title"></strong></div>
-              <button class="icon-btn" id="rep-next" data-i18n-title="rep.next">›</button>
+              <button class="icon-btn" id="rep-next" data-i18n-title="rep.next"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chevron-right"></use></svg></button>
             </div>
           </div>
         </div>
 
         <div class="grid grid-2" id="rep-stats">
-          <div class="card stat income"><div class="stat-label" data-i18n="rep.income"></div><div class="stat-value" id="rep-income"></div></div>
-          <div class="card stat expense"><div class="stat-label" data-i18n="rep.expense"></div><div class="stat-value" id="rep-expense"></div></div>
-          <div class="card stat net"><div class="stat-label" data-i18n="rep.net"></div><div class="stat-value" id="rep-net"></div></div>
-          <div class="card stat"><div class="stat-label" data-i18n="rep.avgDaily"></div><div class="stat-value" id="rep-avg"></div></div>
+          <div class="card stat income"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#arrow-in"></use></svg></span><div class="stat-label" data-i18n="rep.income"></div><div class="stat-value" id="rep-income"></div></div>
+          <div class="card stat expense"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#arrow-out"></use></svg></span><div class="stat-label" data-i18n="rep.expense"></div><div class="stat-value" id="rep-expense"></div></div>
+          <div class="card stat net"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#wallet"></use></svg></span><div class="stat-label" data-i18n="rep.net"></div><div class="stat-value" id="rep-net"></div></div>
+          <div class="card stat avg"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calculator"></use></svg></span><div class="stat-label" data-i18n="rep.avgDaily"></div><div class="stat-value" id="rep-avg"></div></div>
         </div>
 
         <div class="report-grid">
           <div class="card">
-            <h2 class="card-title" data-i18n="rep.trend">Income vs expense</h2>
+            <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chart"></use></svg></span><span data-i18n="rep.trend">Income vs expense</span></h2>
             <div class="chart-box"><canvas id="trend-chart"></canvas></div>
           </div>
           <div class="card">
-            <h2 class="card-title" data-i18n="rep.byCategory">Where your money went</h2>
+            <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#pie"></use></svg></span><span data-i18n="rep.byCategory">Where your money went</span></h2>
             <div class="chart-box small"><canvas id="cat-chart"></canvas></div>
             <div id="cat-list"></div>
           </div>
@@ -123,21 +124,21 @@
 
         <div class="report-grid">
           <div class="card">
-            <h2 class="card-title" data-i18n="rep.insights">Insights</h2>
+            <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#bulb"></use></svg></span><span data-i18n="rep.insights">Insights</span></h2>
             <ul class="insights" id="insights"></ul>
           </div>
           <div class="card">
-            <h2 class="card-title" data-i18n="rep.incomeSources">Income sources</h2>
+            <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#arrow-in"></use></svg></span><span data-i18n="rep.incomeSources">Income sources</span></h2>
             <div id="income-list"></div>
           </div>
         </div>
 
         <div class="card">
-          <h2 class="card-title" data-i18n="rep.download">Download PDF statement</h2>
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#file"></use></svg></span><span data-i18n="rep.download">Download PDF statement</span></h2>
           <p class="muted small" data-i18n="rep.downloadHelp"></p>
           <div class="pdf-buttons">
-            <a class="btn btn-primary" id="pdf-month" href="#">📄 <span id="pdf-month-label"></span></a>
-            <a class="btn" id="pdf-year" href="#">📄 <span id="pdf-year-label"></span></a>
+            <a class="btn btn-primary" id="pdf-month" href="#"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#download"></use></svg> <span id="pdf-month-label"></span></a>
+            <a class="btn" id="pdf-year" href="#"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#download"></use></svg> <span id="pdf-year-label"></span></a>
           </div>
         </div>
       </section>
@@ -145,7 +146,7 @@
       <!-- ================= SETTINGS ================= -->
       <section id="view-settings" class="stack" hidden>
         <form class="card" id="profile-form" novalidate>
-          <h2 class="card-title" data-i18n="set.profile">Profile</h2>
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#user"></use></svg></span><span data-i18n="set.profile">Profile</span></h2>
           <div class="field">
             <label for="set-name" data-i18n="auth.displayName">Your name</label>
             <input class="input" id="set-name" name="displayName" maxlength="60" required />
@@ -155,7 +156,7 @@
         </form>
 
         <div class="card">
-          <h2 class="card-title" data-i18n="set.appearance">Appearance & language</h2>
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#palette"></use></svg></span><span data-i18n="set.appearance">Appearance & language</span></h2>
           <div class="row-between wrap" style="margin-bottom: 0.75rem">
             <span data-i18n="set.language">Language</span>
             <div class="segmented" id="lang-toggle" role="group">
@@ -166,14 +167,14 @@
           <div class="row-between wrap">
             <span data-i18n="set.theme">Theme</span>
             <div class="segmented" id="theme-toggle" role="group">
-              <button type="button" data-theme-choice="light">☀️ <span data-i18n="set.light">Light</span></button>
-              <button type="button" data-theme-choice="dark">🌙 <span data-i18n="set.dark">Dark</span></button>
+              <button type="button" data-theme-choice="light"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#sun"></use></svg> <span data-i18n="set.light">Light</span></button>
+              <button type="button" data-theme-choice="dark"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#moon"></use></svg> <span data-i18n="set.dark">Dark</span></button>
             </div>
           </div>
         </div>
 
         <form class="card" id="password-form" novalidate>
-          <h2 class="card-title" data-i18n="set.security">Security</h2>
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#key"></use></svg></span><span data-i18n="set.security">Security</span></h2>
           <p class="small muted" data-i18n="set.privacyNote"></p>
           <div class="field">
             <label for="cp-current" data-i18n="set.currentPassword">Current password</label>
@@ -192,31 +193,31 @@
         </form>
 
         <div class="card" id="google-card" hidden>
-          <h2 class="card-title" data-i18n="set.google">Google account</h2>
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#shield"></use></svg></span><span data-i18n="set.google">Google account</span></h2>
           <p class="small" id="google-status"></p>
           <div id="google-link-btn" class="google-btn" hidden></div>
           <button class="btn btn-danger" id="google-unlink" type="button" data-i18n="set.googleUnlink" hidden></button>
         </div>
 
         <div class="card">
-          <h2 class="card-title" data-i18n="set.help">Help</h2>
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#help"></use></svg></span><span data-i18n="set.help">Help</span></h2>
           <div class="grid">
-            <button class="btn" id="replay-tour" type="button">🎓 <span data-i18n="set.replayTour"></span></button>
-            <button class="btn" id="logout-btn" type="button">🚪 <span data-i18n="set.logout"></span></button>
+            <button class="btn" id="replay-tour" type="button"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#sparkles"></use></svg> <span data-i18n="set.replayTour"></span></button>
+            <button class="btn" id="logout-btn" type="button"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#logout"></use></svg> <span data-i18n="set.logout"></span></button>
           </div>
         </div>
 
         <div class="card">
-          <h2 class="card-title" data-i18n="set.danger">Danger zone</h2>
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#alert"></use></svg></span><span data-i18n="set.danger">Danger zone</span></h2>
           <button class="btn btn-danger btn-block" id="delete-account" type="button" data-i18n="set.deleteAccount"></button>
         </div>
       </section>
     </main>
 
     <nav class="bottomnav" aria-label="Main">
-      <button class="navbtn" data-view="daily"><span class="icon">📅</span><span data-i18n="nav.daily">Daily</span></button>
-      <button class="navbtn" data-view="reports"><span class="icon">📊</span><span data-i18n="nav.reports">Reports</span></button>
-      <button class="navbtn" data-view="settings"><span class="icon">⚙️</span><span data-i18n="nav.settings">Settings</span></button>
+      <button class="navbtn" data-view="daily"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calendar"></use></svg><span data-i18n="nav.daily">Daily</span></button>
+      <button class="navbtn" data-view="reports"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chart"></use></svg><span data-i18n="nav.reports">Reports</span></button>
+      <button class="navbtn" data-view="settings"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg><span data-i18n="nav.settings">Settings</span></button>
     </nav>
 
     <!-- ================= DIALOGS ================= -->
@@ -238,13 +239,14 @@
             <input class="input" id="ed-amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" required />
           </div>
           <div class="field">
-            <label for="ed-date" data-i18n="daily.date"></label>
-            <input class="input" id="ed-date" name="date" type="date" required />
+            <span class="label" data-i18n="daily.date"></span>
+            <input type="hidden" name="date" />
+            <button type="button" class="input date-input" id="ed-date"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calendar"></use></svg><span id="ed-date-label"></span></button>
           </div>
         </div>
         <div class="field">
-          <label for="ed-category" data-i18n="daily.category"></label>
-          <select class="input" id="ed-category" name="category"></select>
+          <span class="label" id="ed-category-label" data-i18n="daily.category"></span>
+          <div class="cat-picker" id="ed-category" role="radiogroup" aria-labelledby="ed-category-label"></div>
         </div>
         <div class="dialog-actions">
           <button class="btn" type="button" data-action="cancel" data-i18n="daily.cancel">Cancel</button>
@@ -255,7 +257,7 @@
 
     <dialog id="unlock-dialog">
       <form novalidate>
-        <h2>🔒 <span data-i18n="unlock.title"></span></h2>
+        <h2 class="row"><span class="dialog-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#lock"></use></svg></span><span data-i18n="unlock.title"></span></h2>
         <p class="small muted" data-i18n="unlock.body"></p>
         <div class="field">
           <label for="ul-password" data-i18n="auth.password"></label>

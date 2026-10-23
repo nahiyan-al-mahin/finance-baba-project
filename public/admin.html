@@ -12,9 +12,9 @@
   </head>
   <body data-title-key="adm.title">
     <header class="topbar">
-      <a class="brand" href="/admin"><span class="brand-logo" aria-hidden="true">৳</span><span data-i18n="appName">Finance Baba</span></a>
+      <a class="brand" href="/admin"><img class="brand-logo" src="/img/logo.svg" alt="" width="36" height="36" /><span data-i18n="appName">Finance Baba</span></a>
       <button class="icon-btn" type="button" data-action="toggle-lang" data-i18n="toggle.lang">বাংলা</button>
-      <button class="icon-btn" type="button" data-action="toggle-theme" data-i18n-title="toggle.theme">🌙</button>
+      <button class="icon-btn" type="button" data-action="toggle-theme" data-i18n-title="toggle.theme"><svg class="i show-light" aria-hidden="true"><use href="/img/icons.svg#moon"></use></svg><svg class="i show-dark" aria-hidden="true"><use href="/img/icons.svg#sun"></use></svg></button>
       <button class="icon-btn" type="button" id="logout-btn" data-i18n="set.logout">Log out</button>
     </header>
 
@@ -25,14 +25,14 @@
       </div>
 
       <div class="grid grid-2" id="stats">
-        <div class="card stat net"><div class="stat-label" data-i18n="adm.totalUsers"></div><div class="stat-value" id="st-total">–</div></div>
-        <div class="card stat"><div class="stat-label" data-i18n="adm.active7"></div><div class="stat-value" id="st-active">–</div></div>
-        <div class="card stat"><div class="stat-label" data-i18n="adm.new30"></div><div class="stat-value" id="st-new">–</div></div>
-        <div class="card stat expense"><div class="stat-label" data-i18n="adm.locked"></div><div class="stat-value" id="st-locked">–</div></div>
+        <div class="card stat net"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#users"></use></svg></span><div class="stat-label" data-i18n="adm.totalUsers"></div><div class="stat-value" id="st-total">–</div></div>
+        <div class="card stat avg"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#activity"></use></svg></span><div class="stat-label" data-i18n="adm.active7"></div><div class="stat-value" id="st-active">–</div></div>
+        <div class="card stat income"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#user-plus"></use></svg></span><div class="stat-label" data-i18n="adm.new30"></div><div class="stat-value" id="st-new">–</div></div>
+        <div class="card stat expense"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#lock"></use></svg></span><div class="stat-label" data-i18n="adm.locked"></div><div class="stat-value" id="st-locked">–</div></div>
       </div>
 
       <div class="card">
-        <h2 class="card-title" data-i18n="adm.users">Accounts</h2>
+        <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#users"></use></svg></span><span data-i18n="adm.users">Accounts</span></h2>
         <div class="table-wrap">
           <table class="data">
             <thead>
@@ -54,7 +54,7 @@
       </div>
 
       <div class="card">
-        <h2 class="card-title" data-i18n="adm.sentList">Warnings sent</h2>
+        <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#alert"></use></svg></span><span data-i18n="adm.sentList">Warnings sent</span></h2>
         <ul class="entry-list" id="warning-list"></ul>
       </div>
     </main>

@@ -63,14 +63,11 @@ export function setTheme(theme) {
     localStorage.setItem('fb-theme', document.documentElement.dataset.theme);
   } catch {}
   document.dispatchEvent(new CustomEvent('themechange'));
-  updateThemeButtons();
 }
 
 export const getTheme = () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
-function updateThemeButtons() {
-  $$('[data-action=toggle-theme]').forEach((b) => (b.textContent = getTheme() === 'dark' ? '☀️' : '🌙'));
-}
+
 
 /** Wires the language and theme buttons found in the top bar. */
 export function initChrome() {
@@ -85,7 +82,6 @@ export function initChrome() {
       b.textContent = t(b.dataset.i18n);
     })
   );
-  updateThemeButtons();
   applyI18n();
 }
 

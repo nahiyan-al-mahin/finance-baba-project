@@ -1,9 +1,11 @@
 import { get, post, put, patch, del } from './api.js';
-import { t, fmt, setLang, getLang, onLangChange, applyI18n, categoryLabel, categoryIcon } from './i18n.js';
+import { t, fmt, setLang, getLang, onLangChange, applyI18n, categoryLabel, categoryTile } from './i18n.js';
 import { $, $$, initChrome, toast, errorMessage, showFormError, busy, openDialog, dialogAction, escapeHtml, setTheme, getTheme } from './ui.js';
 import { initReports, loadReports } from './reports.js';
 import { startOnboarding } from './onboarding.js';
 import { googleAvailable, renderGoogleButton } from './google.js';
+import { icon } from './icons.js';
+import { addDays, openCalendar, renderWeekStrip, invalidateMarks } from './calendar.js';
 
 const state = { user: null, today: null, date: null, unlockedUntil: 0, view: 'daily', entries: [] };
 
@@ -16,15 +18,21 @@ function handleError(err) {
   toast(errorMessage(err), 'error');
 }
 
-function addDays(date, n) {
-  const d = new Date(`${date}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-}
-
-function fillCategories(select, type, selected) {
-  select.innerHTML = window.FB_CATEGORIES[type].map((c) => `<option value="${c.id}">${c.icon} ${escapeHtml(c[getLang()])}</option>`).join('');
-  if (selected) select.value = selected;
+/** Renders the category chips (radio buttons named "category") into `picker`. */
+function fillCategories(picker, type, selected) {
+  const name = picker.closest('form') ? 'category' : '';
+  const cats = window.FB_CATEGORIES[type];
+  const current = selected || cats[0].id;
+  picker.innerHTML = cats
+    .map(
+      (c) => `
+      <label class="cat-chip">
+        <input type="radio" name="${name}" value="${c.id}" ${c.id === current ? 'checked' : ''} />
+        ${categoryTile(type, c.id)}
+        <span>${escapeHtml(c[getLang()])}</span>
+      </label>`
+    )
+    .join('');
 }
 
 function setTypeToggle(root, type) {
@@ -71,16 +79,17 @@ window.addEventListener('hashchange', () => showView(location.hash.slice(1)));
 // ---------- daily ----------
 function renderDayHeader() {
   const isToday = state.date === state.today;
-  $('#day-title').textContent = isToday ? `${t('daily.today')} · ${fmt.date(state.date)}` : fmt.longDate(state.date);
+  $('#day-title').textContent = isToday ? t('daily.today') : fmt.date(state.date, { weekday: 'long' });
+  $('#day-sub').textContent = fmt.date(state.date, { day: 'numeric', month: 'long', year: 'numeric' });
   const badge = $('#day-badge');
   const unlocked = state.unlockedUntil > Date.now();
-  badge.className = `badge ${isToday ? 'today' : unlocked ? '' : 'locked'}`;
-  badge.textContent = isToday ? fmt.date(state.date, { weekday: 'long' }) : unlocked ? `🔓 ${t('daily.unlocked')}` : `🔒 ${t('daily.pastLocked')}`;
-  $('#day-next').disabled = state.date >= state.today;
-  $('#day-picker').value = state.date;
-  $('#day-picker').max = state.today;
+  badge.hidden = isToday;
+  badge.className = `badge ${unlocked ? 'unlocked' : 'locked'}`;
+  badge.innerHTML = unlocked ? `${icon('unlock')} ${escapeHtml(t('daily.unlocked'))}` : `${icon('lock')} ${escapeHtml(t('daily.pastLocked'))}`;
   $('#day-today').hidden = isToday;
+  $('#week-next').disabled = isToday;
   $('#day-total-label').textContent = t(isToday ? 'daily.totalSpentToday' : 'daily.totalSpent');
+  renderWeekStrip($('#week-days'), { selected: state.date, today: state.today, onSelect: (d) => loadDay(d).catch(handleError) });
 }
 
 function renderEntries(totals) {
@@ -90,22 +99,22 @@ function renderEntries(totals) {
   $('#day-total').textContent = fmt.money(totals.expense);
   const list = $('#entry-list');
   if (!state.entries.length) {
-    list.innerHTML = `<li class="empty"><div class="big">🗒️</div>${escapeHtml(t('daily.empty'))}</li>`;
+    list.innerHTML = `<li class="empty"><span class="empty-art">${icon('inbox')}</span>${escapeHtml(t('daily.empty'))}</li>`;
     return;
   }
   list.innerHTML = state.entries
     .map(
       (e) => `
       <li class="entry" data-id="${e.id}">
-        <span class="entry-icon" aria-hidden="true">${categoryIcon(e.type, e.category)}</span>
+        ${categoryTile(e.type, e.category, 'entry-icon')}
         <div class="entry-body">
           <div class="entry-note">${escapeHtml(e.note)}</div>
           <div class="entry-meta">${escapeHtml(categoryLabel(e.type, e.category))} · ${fmt.time(e.createdAt)}</div>
         </div>
         <span class="entry-amount ${e.type}">${e.type === 'income' ? '+' : '−'}${fmt.money(e.amount)}</span>
         <span class="entry-actions">
-          <button class="icon-btn" data-action="edit" title="${escapeHtml(t('daily.edit'))}" aria-label="${escapeHtml(t('daily.edit'))}">✏️</button>
-          <button class="icon-btn" data-action="delete" title="${escapeHtml(t('daily.delete'))}" aria-label="${escapeHtml(t('daily.delete'))}">🗑️</button>
+          <button class="icon-btn" data-action="edit" title="${escapeHtml(t('daily.edit'))}" aria-label="${escapeHtml(t('daily.edit'))}">${icon('pencil')}</button>
+          <button class="icon-btn" data-action="delete" title="${escapeHtml(t('daily.delete'))}" aria-label="${escapeHtml(t('daily.delete'))}">${icon('trash')}</button>
         </span>
       </li>`
     )
@@ -125,8 +134,9 @@ async function loadDay(date = state.date) {
 
 function updateAddFormType(type) {
   const form = $('#add-form');
+  const keep = form.elements.type.value === type ? form.elements.category?.value : null;
   setTypeToggle(form, type);
-  fillCategories($('#add-category'), type);
+  fillCategories($('#add-category'), type, keep);
   $('#add-note').placeholder = t(type === 'income' ? 'daily.occasionPhIncome' : 'daily.occasionPhExpense');
 }
 
@@ -147,6 +157,7 @@ function initDaily() {
         form.elements.amount.value = '';
         form.elements.note.focus();
         toast(t('daily.added'));
+        invalidateMarks();
         await loadDay();
       } catch (err) {
         if (err.status === 401) return handleError(err);
@@ -163,10 +174,23 @@ function initDaily() {
     if (btn.dataset.action === 'delete') deleteEntry(entry);
   });
 
-  $('#day-prev').addEventListener('click', () => loadDay(addDays(state.date, -1)).catch(handleError));
-  $('#day-next').addEventListener('click', () => loadDay(addDays(state.date, 1)).catch(handleError));
-  $('#day-today').addEventListener('click', () => loadDay(state.today).catch(handleError));
-  $('#day-picker').addEventListener('change', (e) => e.target.value && loadDay(e.target.value).catch(handleError));
+  const go = (d) => loadDay(d > state.today ? state.today : d).catch(handleError);
+  $('#week-prev').addEventListener('click', () => go(addDays(state.date, -7)));
+  $('#week-next').addEventListener('click', () => go(addDays(state.date, 7)));
+  $('#day-today').addEventListener('click', () => go(state.today));
+  $('#day-open-cal').addEventListener('click', (e) =>
+    openCalendar({ anchor: e.currentTarget, value: state.date, max: state.today, onSelect: go })
+  );
+
+  // Swipe the week strip to move a week
+  let startX = null;
+  const strip = $('#week-days');
+  strip.addEventListener('touchstart', (e) => (startX = e.touches[0].clientX), { passive: true });
+  strip.addEventListener('touchend', (e) => {
+    const dx = startX === null ? 0 : e.changedTouches[0].clientX - startX;
+    startX = null;
+    if (Math.abs(dx) > 50) go(addDays(state.date, dx < 0 ? 7 : -7));
+  });
 }
 
 async function editEntry(entry) {
@@ -178,16 +202,21 @@ async function editEntry(entry) {
       onOpen(form) {
         setTypeToggle(dialog, entry.type);
         const f = form.elements;
-        fillCategories(f.category, entry.type, entry.category);
+        const picker = $('#ed-category');
+        fillCategories(picker, entry.type, entry.category);
         f.note.value = entry.note;
         f.amount.value = entry.amount;
-        f.date.value = entry.date;
-        f.date.max = state.today;
+        const setDate = (d) => {
+          f.date.value = d;
+          $('#ed-date-label').textContent = fmt.date(d, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+        };
+        setDate(entry.date);
+        $('#ed-date').onclick = (e) => openCalendar({ anchor: e.currentTarget, value: f.date.value, max: state.today, onSelect: setDate });
         $$('.type-toggle [data-type]', dialog).forEach(
           (b) =>
             (b.onclick = () => {
               setTypeToggle(dialog, b.dataset.type);
-              fillCategories(f.category, b.dataset.type);
+              fillCategories(picker, b.dataset.type);
             })
         );
       },
@@ -195,6 +224,7 @@ async function editEntry(entry) {
   ).catch(handleError);
   if (saved) {
     toast(t('daily.saved'));
+    invalidateMarks();
     loadDay().catch(handleError);
   }
 }
@@ -206,6 +236,7 @@ async function deleteEntry(entry) {
   }).catch(handleError);
   if (done) {
     toast(t('daily.deleted'));
+    invalidateMarks();
     loadDay().catch(handleError);
   }
 }
@@ -218,7 +249,7 @@ async function loadWarnings() {
     .map(
       (w) => `
       <div class="alert" role="alert" data-id="${w.id}">
-        <strong>⚠️ ${escapeHtml(t('warn.title'))}</strong> <span class="small muted">${fmt.dateTime(w.createdAt)}</span>
+        <strong class="row">${icon('alert')} ${escapeHtml(t('warn.title'))}</strong> <span class="small muted">${fmt.dateTime(w.createdAt)}</span>
         <p style="margin: 0.4rem 0 0.6rem">${escapeHtml(w.message)}</p>
         <button class="btn" data-ack>${escapeHtml(t('warn.ack'))}</button>
       </div>`

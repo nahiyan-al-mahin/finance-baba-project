@@ -1,1 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#0f766e"/><text x="32" y="45" font-family="'Noto Sans Bengali', sans-serif" font-size="38" font-weight="700" fill="#fff" text-anchor="middle">৳</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Finance Baba mark: a raised teal tile with rising bars and a coin -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#26a69a"/>
+      <stop offset="1" stop-color="#0b5f58"/>
+    </linearGradient>
+    <linearGradient id="coin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe08a"/>
+      <stop offset="1" stop-color="#e0a526"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="4" width="60" height="58" rx="16" fill="#08453f"/>
+  <rect x="2" y="2" width="60" height="57" rx="16" fill="url(#tile)"/>
+  <path d="M10 6h44a12 12 0 0 1 6 4" stroke="#ffffff" stroke-opacity=".35" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <rect x="14" y="34" width="9" height="15" rx="3" fill="#fffaf0"/>
+  <rect x="27.5" y="26" width="9" height="23" rx="3" fill="#fffaf0"/>
+  <rect x="41" y="31" width="9" height="18" rx="3" fill="#fffaf0" fill-opacity=".85"/>
+  <circle cx="45.5" cy="18" r="7.5" fill="url(#coin)" stroke="#b9821a" stroke-width="1.5"/>
+  <path d="M43 15.5h5M43 18h4.2M45 18v4" stroke="#8a5d0c" stroke-width="1.6" stroke-linecap="round"/>
+</svg>
