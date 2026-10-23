@@ -8,6 +8,7 @@ const dict = {
     'nav.settings': 'Settings',
     'toggle.lang': 'বাংলা',
     'toggle.theme': 'Switch dark / light mode',
+    'toggle.sketch': 'Sketchbook theme',
 
     // Landing / auth
     'hero.title': 'Know where every taka goes.',
@@ -167,6 +168,7 @@ const dict = {
     'set.theme': 'Theme',
     'set.light': 'Light',
     'set.dark': 'Dark',
+    'set.sketch': 'Sketchbook',
     'set.security': 'Security',
     'set.currentPassword': 'Current password',
     'set.changePassword': 'Change password',
@@ -260,6 +262,7 @@ const dict = {
     'nav.settings': 'সেটিংস',
     'toggle.lang': 'English',
     'toggle.theme': 'ডার্ক / লাইট মোড পরিবর্তন',
+    'toggle.sketch': 'স্কেচবুক থিম',
 
     'hero.title': 'প্রতিটি টাকার হিসাব রাখুন।',
     'hero.lead': 'প্রতিদিন কোথায় কত খরচ করলেন আর কত আয় করলেন লিখে রাখুন। ফাইন্যান্স বাবা নিজেই যোগ করে সপ্তাহ, মাস ও বছরের হিসাব দেখাবে।',
@@ -413,6 +416,7 @@ const dict = {
     'set.theme': 'থিম',
     'set.light': 'লাইট',
     'set.dark': 'ডার্ক',
+    'set.sketch': 'স্কেচবুক',
     'set.security': 'নিরাপত্তা',
     'set.currentPassword': 'বর্তমান পাসওয়ার্ড',
     'set.changePassword': 'পাসওয়ার্ড পরিবর্তন',

@@ -1382,6 +1382,7 @@ dialog::backdrop {
   inset: 0;
   z-index: 60;
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* the slide track must never widen the column */
   place-items: center;
   padding: 1rem;
   background: rgba(20, 14, 6, 0.5);
@@ -1761,4 +1762,405 @@ table.data th {
   margin: 0;
   font-size: 0.92rem;
   color: var(--muted);
+}
+
+/* =====================================================================
+   SKETCHBOOK THEME  (data-theme="sketch")
+   Ruled notebook paper, handwritten fonts, wobbly ink outlines,
+   hard pencil shadows, highlighter accents and hatch-filled bars.
+   ===================================================================== */
+@font-face {
+  font-family: 'Patrick Hand';
+  src: url('/fonts/PatrickHand-latin.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Atma';
+  src: url('/fonts/Atma-bengali-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+1CD0-1CF9, U+200C-200D, U+20B9, U+25CC;
+}
+@font-face {
+  font-family: 'Atma';
+  src: url('/fonts/Atma-bengali-600.woff2') format('woff2');
+  font-weight: 600 900;
+  font-display: swap;
+  unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+1CD0-1CF9, U+200C-200D, U+20B9, U+25CC;
+}
+
+:root[data-theme='sketch'] {
+  --brand: #2348a8; /* blue ballpoint */
+  --brand-strong: #1a367f;
+  --brand-light: #3a62c4;
+  --brand-soft: #dfe7fb;
+  --on-brand: #ffffff;
+  --bg: #fbf7ec;
+  --bg-glow: #fbf7ec;
+  --surface: #fffdf6;
+  --surface-hi: #fffdf6;
+  --surface-2: #f5eedb;
+  --well: #fffdf6;
+  --text: #2b2a27; /* graphite */
+  --muted: #615c53;
+  --border: #2b2a27;
+  --income: #2e7d32;
+  --income-soft: #e3f1dc;
+  --expense: #c62828; /* red pen */
+  --expense-soft: #fbe2dc;
+  --danger: #c62828;
+  --danger-soft: #fbe2dc;
+  --warning: #8a5a00;
+  --warning-soft: #fff3b0; /* sticky note */
+  --highlight: rgba(255, 214, 64, 0.65);
+
+  --shade: 43, 42, 39;
+  --hi: 0 0 0 transparent;
+  --sh-1: 2px 2px 0 var(--border);
+  --sh-2: 3px 3px 0 var(--border);
+  --sh-3: 5px 5px 0 var(--border);
+  --inset: inset 0 0 0 transparent;
+  --btn-edge: 0 0 0 transparent;
+  --wobble: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  --wobble-2: 15px 225px 15px 255px / 255px 15px 225px 15px;
+  --hand: 'Patrick Hand', 'Atma', 'Comic Sans MS', 'Segoe Print', cursive;
+  color-scheme: light;
+  font-size: 112%;
+}
+
+/* Paper */
+:root[data-theme='sketch'] body {
+  font-family: var(--hand);
+  background-color: var(--bg);
+  background-image: repeating-linear-gradient(180deg, transparent 0 31px, rgba(70, 110, 190, 0.17) 31px 32px);
+  background-attachment: local;
+}
+@media (min-width: 760px) {
+  :root[data-theme='sketch'] body {
+    background-image: linear-gradient(90deg, transparent 0 54px, rgba(214, 70, 70, 0.35) 54px 56px, transparent 56px),
+      repeating-linear-gradient(180deg, transparent 0 31px, rgba(70, 110, 190, 0.17) 31px 32px);
+  }
+}
+:root[data-theme='sketch'] :is(button, input, select, textarea) {
+  font-family: var(--hand);
+}
+:root[data-theme='sketch'] :is(h1, h2, h3) {
+  letter-spacing: 0.01em;
+}
+:root[data-theme='sketch'] :focus-visible {
+  outline: 2px dashed var(--brand);
+  outline-offset: 3px;
+}
+
+/* Every "surface" becomes an ink-outlined, wobbly piece of paper */
+:root[data-theme='sketch']
+  :is(.card, .btn, .icon-btn, .input, .segmented, .date-chip, .entry, .cat-chip, .cal-pop, dialog, .bottomnav, .onb-card, .alert, .day-total, .badge, .toast, .week-days, .recovery-code, table.data tr) {
+  border: 2px solid var(--border);
+  border-radius: var(--wobble);
+  background-image: none;
+}
+:root[data-theme='sketch'] :is(.card, .entry, .cat-chip, dialog, .onb-card, .cal-pop) {
+  background-color: var(--surface);
+}
+:root[data-theme='sketch'] :is(.card:nth-child(even), .entry:nth-child(even), .cat-chip:nth-child(even), .btn-primary) {
+  border-radius: var(--wobble-2);
+}
+:root[data-theme='sketch'] :is(.btn, .icon-btn, .date-chip, .segmented) {
+  background-color: var(--surface);
+}
+
+/* A slightly hand-placed feel */
+:root[data-theme='sketch'] .stat:nth-child(odd) {
+  transform: rotate(-0.6deg);
+}
+:root[data-theme='sketch'] .stat:nth-child(even) {
+  transform: rotate(0.5deg);
+}
+:root[data-theme='sketch'] :is(.stat.income, .stat.expense, .stat.net, .streak-card, .day-total) {
+  background-image: none;
+  box-shadow: var(--sh-2);
+}
+:root[data-theme='sketch'] .stat.income {
+  background-color: var(--income-soft);
+}
+:root[data-theme='sketch'] .stat.expense,
+:root[data-theme='sketch'] .day-total {
+  background-color: var(--expense-soft);
+}
+:root[data-theme='sketch'] .stat.net {
+  background-color: var(--brand-soft);
+}
+
+/* Washi tape on a few cards */
+:root[data-theme='sketch'] :is(.auth-card, .onb-card, .tip-card, .profile-card, .day-card) {
+  position: relative;
+  overflow: visible;
+}
+:root[data-theme='sketch'] :is(.auth-card, .onb-card, .tip-card, .profile-card, .day-card)::before {
+  content: '';
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  width: 96px;
+  height: 24px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: repeating-linear-gradient(90deg, rgba(255, 196, 120, 0.75) 0 10px, rgba(255, 214, 160, 0.75) 10px 20px);
+  border-left: 2px dashed rgba(43, 42, 39, 0.25);
+  border-right: 2px dashed rgba(43, 42, 39, 0.25);
+  z-index: 2;
+  pointer-events: none;
+}
+:root[data-theme='sketch'] .onb-card {
+  overflow: visible;
+}
+
+/* Highlighter on headings */
+:root[data-theme='sketch'] :is(.card-title > span:not(.title-icon), .hero h1, .daynav .title strong, .cal-head strong) {
+  background: linear-gradient(transparent 58%, var(--highlight) 58%, var(--highlight) 92%, transparent 92%);
+  padding: 0 0.2em;
+}
+
+/* Buttons */
+:root[data-theme='sketch'] :is(.btn, .icon-btn, .date-chip) {
+  box-shadow: var(--sh-1);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+:root[data-theme='sketch'] :is(.btn, .icon-btn, .date-chip):hover {
+  filter: none;
+  transform: translate(-1px, -1px) rotate(-0.4deg);
+  box-shadow: 3px 3px 0 var(--border);
+}
+:root[data-theme='sketch'] :is(.btn, .icon-btn, .date-chip):active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 var(--border);
+}
+:root[data-theme='sketch'] .btn-primary {
+  background-color: var(--brand);
+  color: #fff;
+  box-shadow: var(--sh-2);
+}
+:root[data-theme='sketch'] .btn-primary:hover {
+  box-shadow: 4px 4px 0 var(--border);
+}
+:root[data-theme='sketch'] .btn-danger {
+  background-color: var(--danger-soft);
+}
+:root[data-theme='sketch'] .btn-ghost {
+  border-color: transparent;
+  box-shadow: none;
+}
+:root[data-theme='sketch'] [data-action='toggle-sketch'][aria-pressed='true'] {
+  background-color: var(--highlight);
+}
+
+/* Inputs: paper with a pen outline */
+:root[data-theme='sketch'] .input {
+  background-color: transparent;
+  box-shadow: none;
+  border-style: dashed;
+}
+:root[data-theme='sketch'] .input:focus {
+  border-style: solid;
+  background-color: var(--surface);
+  box-shadow: 3px 3px 0 var(--brand);
+}
+
+/* Segmented controls: the active option is highlighted with a marker */
+:root[data-theme='sketch'] .segmented {
+  box-shadow: none;
+}
+:root[data-theme='sketch'] .segmented button[aria-pressed='true'] {
+  background: var(--highlight);
+  color: var(--text);
+  border-radius: var(--wobble-2);
+  box-shadow: inset 0 0 0 2px var(--border);
+}
+
+/* Icon tiles: flat colour, ink outline, pencil shadow */
+:root[data-theme='sketch']
+  :is(.title-icon, .stat-icon, .cat-tile, .date-chip-icon, .features .ic, .onb-art, .avatar, .streak-badge, .dialog-icon, .empty-art) {
+  background-image: none;
+  border: 2px solid var(--border);
+  box-shadow: 2px 2px 0 var(--border);
+  border-radius: var(--wobble-2);
+}
+:root[data-theme='sketch'] .title-icon {
+  background-color: var(--surface);
+  color: var(--brand);
+}
+:root[data-theme='sketch'] :is(.stat-icon, .cat-tile) {
+  background-color: color-mix(in srgb, var(--c) 82%, #fff);
+}
+:root[data-theme='sketch'] :is(.date-chip-icon, .features .ic, .onb-art) {
+  background-color: var(--brand);
+  color: #fff;
+}
+:root[data-theme='sketch'] .onb-art {
+  box-shadow: 5px 5px 0 var(--border);
+}
+:root[data-theme='sketch'] .avatar {
+  background-color: #f2b632;
+  color: var(--text);
+}
+:root[data-theme='sketch'] .streak-badge {
+  background-color: #f08c3c;
+  color: var(--text);
+}
+:root[data-theme='sketch'] .dialog-icon {
+  background-color: #f2b632;
+  color: var(--text);
+}
+:root[data-theme='sketch'] .empty-art {
+  background-color: var(--surface);
+}
+
+/* Category chips */
+:root[data-theme='sketch'] .cat-chip {
+  box-shadow: var(--sh-1);
+}
+:root[data-theme='sketch'] .cat-chip:has(input:checked) {
+  background-color: var(--highlight);
+  border-color: var(--border);
+  box-shadow: 3px 3px 0 var(--border);
+  transform: rotate(-1.5deg) translateY(-2px);
+}
+
+/* Entries */
+:root[data-theme='sketch'] .entry {
+  box-shadow: var(--sh-1);
+}
+:root[data-theme='sketch'] .entry:hover {
+  transform: rotate(-0.3deg);
+  box-shadow: var(--sh-2);
+}
+
+/* Week strip and calendar: circled like a pen on a planner */
+:root[data-theme='sketch'] .week-days {
+  border-style: dashed;
+  background-color: transparent;
+  box-shadow: none;
+}
+:root[data-theme='sketch'] :is(.wk-day.selected, .cal-day.selected) {
+  background: var(--brand);
+  color: #fff;
+  border: 2px solid var(--border);
+  border-radius: var(--wobble);
+  box-shadow: 2px 2px 0 var(--border);
+}
+:root[data-theme='sketch'] .cal-day.today {
+  box-shadow: none;
+  outline: 2px solid var(--expense);
+  outline-offset: -3px;
+  border-radius: 50% 45% 55% 48% / 52% 50% 46% 50%; /* hand-drawn circle */
+}
+:root[data-theme='sketch'] .cal-day:hover:not(:disabled),
+:root[data-theme='sketch'] .wk-day:hover:not(:disabled) {
+  background: var(--highlight);
+  box-shadow: none;
+}
+:root[data-theme='sketch'] .cal-dot {
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+
+/* Bars, meters and mini-charts: pencil hatching */
+:root[data-theme='sketch'] :is(.bar, .meter, .mini-bar-track) {
+  background: transparent;
+  border: 2px solid var(--border);
+  box-shadow: none;
+}
+:root[data-theme='sketch'] .bar > span {
+  background: repeating-linear-gradient(-45deg, var(--c) 0 3px, color-mix(in srgb, var(--c) 30%, transparent) 3px 7px);
+  box-shadow: none;
+}
+:root[data-theme='sketch'] .meter > span,
+:root[data-theme='sketch'] .meter > span:is(.warn, .danger) {
+  background: repeating-linear-gradient(-45deg, var(--brand) 0 3px, transparent 3px 7px);
+  box-shadow: none;
+}
+:root[data-theme='sketch'] .meter > span:is(.warn, .danger) {
+  background: repeating-linear-gradient(-45deg, var(--expense) 0 3px, transparent 3px 7px);
+}
+:root[data-theme='sketch'] .mini-bar-track > span {
+  background: repeating-linear-gradient(-45deg, var(--expense) 0 3px, transparent 3px 7px);
+  border-top: 2px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Navigation */
+:root[data-theme='sketch'] .topbar {
+  background: var(--bg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 2px solid var(--border);
+  box-shadow: none;
+}
+:root[data-theme='sketch'] .bottomnav {
+  background-color: var(--surface);
+  box-shadow: var(--sh-3);
+}
+:root[data-theme='sketch'] .navbtn[aria-current='page'] .i {
+  background: var(--brand);
+  color: #fff;
+  box-shadow: 2px 2px 0 var(--border);
+  outline: 2px solid var(--border);
+  outline-offset: -2px;
+}
+:root[data-theme='sketch'] :is(.side-nav, .topnav) .navbtn[aria-current='page'] {
+  background: var(--highlight);
+  box-shadow: none;
+}
+
+/* Sticky notes */
+:root[data-theme='sketch'] :is(.toast, .alert) {
+  background-color: var(--warning-soft);
+  color: var(--text);
+  box-shadow: var(--sh-2);
+  transform: rotate(-0.8deg);
+}
+:root[data-theme='sketch'] .toast.error {
+  background-color: #ffd0c7;
+  color: var(--text);
+}
+:root[data-theme='sketch'] .badge {
+  box-shadow: none;
+  border-width: 1.5px;
+}
+:root[data-theme='sketch'] :is(.badge.locked, .badge.unlocked) {
+  background-image: none;
+}
+
+/* Dialogs and overlays */
+:root[data-theme='sketch'] dialog,
+:root[data-theme='sketch'] .cal-pop,
+:root[data-theme='sketch'] .onb-card {
+  box-shadow: 6px 6px 0 var(--border);
+}
+:root[data-theme='sketch'] dialog::backdrop,
+:root[data-theme='sketch'] .onboarding {
+  background: rgba(43, 42, 39, 0.35);
+  backdrop-filter: none;
+}
+:root[data-theme='sketch'] .dots span {
+  border: 1.5px solid var(--border);
+  box-shadow: none;
+  background: transparent;
+}
+:root[data-theme='sketch'] .dots span.active {
+  background: var(--brand);
+}
+:root[data-theme='sketch'] .recovery-code {
+  border-style: dashed;
+  background: var(--warning-soft);
+  box-shadow: none;
+}
+:root[data-theme='sketch'] .mini-row.total,
+:root[data-theme='sketch'] table.data :is(th, td) {
+  border-color: rgba(43, 42, 39, 0.35);
+}
+:root[data-theme='sketch'] .brand-logo {
+  filter: drop-shadow(2px 2px 0 var(--border));
 }

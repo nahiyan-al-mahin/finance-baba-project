@@ -1,6 +1,6 @@
 # Finance Baba (ফাইন্যান্স বাবা)
 
-A mobile-friendly personal finance diary. Users log what they spend and what they earn each day. The app shows the daily total, analyses each week, month and year, and exports full PDF statements. It works in **English and বাংলা**, with a **light cream theme (default)** and a dark theme.
+A mobile-friendly personal finance diary. Users log what they spend and what they earn each day. The app shows the daily total, analyses each week, month and year, and exports full PDF statements. It works in **English and বাংলা**, with three themes: **light cream (default)**, **dark** and a hand-drawn **sketchbook** theme.
 
 ## Features
 

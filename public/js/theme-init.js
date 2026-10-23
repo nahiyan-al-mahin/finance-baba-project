@@ -6,6 +6,6 @@
     theme = localStorage.getItem('fb-theme') || 'light';
     lang = localStorage.getItem('fb-lang') || 'en';
   } catch (e) {}
-  document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme === 'dark' || theme === 'sketch' ? theme : 'light');
   document.documentElement.setAttribute('lang', lang === 'bn' ? 'bn' : 'en');
 })();

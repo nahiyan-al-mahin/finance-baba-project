@@ -63,6 +63,9 @@ function drawCharts(s) {
   const grid = css('--border');
   Chart.defaults.color = text;
   Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  // Sketchbook: ink outlines instead of soft rounded bars
+  const sketch = document.documentElement.dataset.theme === 'sketch';
+  const ink = sketch ? { borderColor: css('--text'), borderWidth: 2, borderRadius: 2 } : { borderRadius: 6 };
 
   const labels = s.series.map((b) =>
     s.period === 'year' ? fmt.monthShort(b.key) : s.period === 'week' ? fmt.date(b.key, { weekday: 'short' }) : fmt.number(Number(b.key.slice(8)))
@@ -73,8 +76,8 @@ function drawCharts(s) {
     data: {
       labels,
       datasets: [
-        { label: t('rep.income'), data: s.series.map((b) => b.income), backgroundColor: css('--income'), borderRadius: 6 },
-        { label: t('rep.expense'), data: s.series.map((b) => b.expense), backgroundColor: css('--expense'), borderRadius: 6 },
+        { label: t('rep.income'), data: s.series.map((b) => b.income), backgroundColor: css('--income'), ...ink },
+        { label: t('rep.expense'), data: s.series.map((b) => b.expense), backgroundColor: css('--expense'), ...ink },
       ],
     },
     options: {
@@ -105,7 +108,7 @@ function drawCharts(s) {
     type: 'doughnut',
     data: {
       labels: cats.map((c) => categoryLabel('expense', c.category)),
-      datasets: [{ data: cats.map((c) => c.amount), backgroundColor: cats.map((c) => categoryColor('expense', c.category)), borderColor: css('--surface'), borderWidth: 3, hoverOffset: 8 }],
+      datasets: [{ data: cats.map((c) => c.amount), backgroundColor: cats.map((c) => categoryColor('expense', c.category)), borderColor: sketch ? css('--text') : css('--surface'), borderWidth: sketch ? 2 : 3, hoverOffset: 8 }],
     },
     options: {
       maintainAspectRatio: false,

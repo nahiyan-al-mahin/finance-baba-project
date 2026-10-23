@@ -57,22 +57,30 @@ export async function busy(form, fn) {
   }
 }
 
+export const THEMES = ['light', 'dark', 'sketch'];
+
 export function setTheme(theme) {
-  document.documentElement.dataset.theme = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = THEMES.includes(theme) ? theme : 'light';
   try {
     localStorage.setItem('fb-theme', document.documentElement.dataset.theme);
   } catch {}
+  updateThemeButtons();
   document.dispatchEvent(new CustomEvent('themechange'));
 }
 
-export const getTheme = () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+export const getTheme = () => (THEMES.includes(document.documentElement.dataset.theme) ? document.documentElement.dataset.theme : 'light');
 
-
+function updateThemeButtons() {
+  $$('[data-action=toggle-sketch]').forEach((b) => b.setAttribute('aria-pressed', String(getTheme() === 'sketch')));
+}
 
 /** Wires the language and theme buttons found in the top bar. */
 export function initChrome() {
   $$('[data-action=toggle-lang]').forEach((b) => b.addEventListener('click', () => setLang(getLang() === 'bn' ? 'en' : 'bn')));
+  // Moon/sun switches between dark and light; the pencil turns the sketchbook theme on and off.
   $$('[data-action=toggle-theme]').forEach((b) => b.addEventListener('click', () => setTheme(getTheme() === 'dark' ? 'light' : 'dark')));
+  $$('[data-action=toggle-sketch]').forEach((b) => b.addEventListener('click', () => setTheme(getTheme() === 'sketch' ? 'light' : 'sketch')));
+  updateThemeButtons();
   $$('.toggle-pw').forEach((b) =>
     b.addEventListener('click', () => {
       const input = b.previousElementSibling;
