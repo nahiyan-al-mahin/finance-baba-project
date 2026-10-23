@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>Finance Baba</title>
+    <link rel="icon" href="/img/logo.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <script src="/js/theme-init.js"></script>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/app"><span class="brand-logo" aria-hidden="true">৳</span><span data-i18n="appName">Finance Baba</span></a>
+      <nav class="topnav" aria-label="Main">
+        <button class="navbtn" data-view="daily"><span class="icon">📅</span><span data-i18n="nav.daily">Daily</span></button>
+        <button class="navbtn" data-view="reports"><span class="icon">📊</span><span data-i18n="nav.reports">Reports</span></button>
+        <button class="navbtn" data-view="settings"><span class="icon">⚙️</span><span data-i18n="nav.settings">Settings</span></button>
+      </nav>
+      <button class="icon-btn" type="button" data-action="toggle-lang" data-i18n="toggle.lang">বাংলা</button>
+      <button class="icon-btn" type="button" data-action="toggle-theme" data-i18n-title="toggle.theme">🌙</button>
+    </header>
+
+    <main class="container app-main">
+      <div id="warnings" class="stack" style="margin-bottom: 1rem"></div>
+
+      <!-- ================= DAILY ================= -->
+      <section id="view-daily" class="stack" hidden>
+        <div class="card">
+          <div class="daynav">
+            <button class="icon-btn" id="day-prev" data-i18n-title="daily.prev">‹</button>
+            <div class="title">
+              <strong id="day-title"></strong>
+              <span id="day-badge" class="badge"></span>
+            </div>
+            <button class="icon-btn" id="day-next" data-i18n-title="daily.next">›</button>
+          </div>
+          <div class="row wrap" style="justify-content: center; margin-top: 0.6rem">
+            <label class="sr-only" for="day-picker" data-i18n="daily.pickDate"></label>
+            <input type="date" id="day-picker" class="input" style="max-width: 200px" />
+            <button class="btn btn-ghost" id="day-today" data-i18n="daily.goToday">Go to today</button>
+          </div>
+        </div>
+
+        <div class="grid grid-3">
+          <div class="card stat expense"><div class="stat-label" data-i18n="daily.spent"></div><div class="stat-value" id="day-expense">৳0</div></div>
+          <div class="card stat income"><div class="stat-label" data-i18n="daily.earned"></div><div class="stat-value" id="day-income">৳0</div></div>
+          <div class="card stat net"><div class="stat-label" data-i18n="daily.balance"></div><div class="stat-value" id="day-net">৳0</div></div>
+        </div>
+
+        <form class="card" id="add-form" novalidate>
+          <div class="row-between wrap" style="margin-bottom: 0.85rem">
+            <h2 class="card-title" style="margin: 0" data-i18n="daily.addTitle">Add an entry</h2>
+            <div class="segmented type-toggle" role="group">
+              <button type="button" data-type="expense" aria-pressed="true" data-i18n="daily.expense">Expense</button>
+              <button type="button" data-type="income" aria-pressed="false" data-i18n="daily.income">Income</button>
+            </div>
+          </div>
+          <input type="hidden" name="type" value="expense" />
+          <div class="form-grid">
+            <div class="field">
+              <label for="add-note" data-i18n="daily.occasion">What was it for?</label>
+              <input class="input" id="add-note" name="note" maxlength="200" autocomplete="off" required />
+            </div>
+            <div class="field">
+              <label for="add-amount" data-i18n="daily.amount">Amount</label>
+              <input class="input" id="add-amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" required />
+            </div>
+            <div class="field">
+              <label for="add-category" data-i18n="daily.category">Category</label>
+              <select class="input" id="add-category" name="category"></select>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit">＋ <span data-i18n="daily.add">Add</span></button>
+        </form>
+
+        <div class="card">
+          <h2 class="card-title" data-i18n="daily.listTitle">Entries</h2>
+          <ul class="entry-list" id="entry-list"></ul>
+          <div class="day-total">
+            <span id="day-total-label"></span>
+            <span class="num" id="day-total">৳0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= REPORTS ================= -->
+      <section id="view-reports" class="stack" hidden>
+        <div class="card">
+          <div class="row-between wrap">
+            <div class="segmented" id="period-toggle" role="group">
+              <button type="button" data-period="week" aria-pressed="false" data-i18n="rep.week">Week</button>
+              <button type="button" data-period="month" aria-pressed="true" data-i18n="rep.month">Month</button>
+              <button type="button" data-period="year" aria-pressed="false" data-i18n="rep.year">Year</button>
+            </div>
+            <div class="daynav" style="flex: 1; min-width: 240px">
+              <button class="icon-btn" id="rep-prev" data-i18n-title="rep.prev">‹</button>
+              <div class="title"><strong id="rep-title"></strong></div>
+              <button class="icon-btn" id="rep-next" data-i18n-title="rep.next">›</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-2" id="rep-stats">
+          <div class="card stat income"><div class="stat-label" data-i18n="rep.income"></div><div class="stat-value" id="rep-income"></div></div>
+          <div class="card stat expense"><div class="stat-label" data-i18n="rep.expense"></div><div class="stat-value" id="rep-expense"></div></div>
+          <div class="card stat net"><div class="stat-label" data-i18n="rep.net"></div><div class="stat-value" id="rep-net"></div></div>
+          <div class="card stat"><div class="stat-label" data-i18n="rep.avgDaily"></div><div class="stat-value" id="rep-avg"></div></div>
+        </div>
+
+        <div class="report-grid">
+          <div class="card">
+            <h2 class="card-title" data-i18n="rep.trend">Income vs expense</h2>
+            <div class="chart-box"><canvas id="trend-chart"></canvas></div>
+          </div>
+          <div class="card">
+            <h2 class="card-title" data-i18n="rep.byCategory">Where your money went</h2>
+            <div class="chart-box small"><canvas id="cat-chart"></canvas></div>
+            <div id="cat-list"></div>
+          </div>
+        </div>
+
+        <div class="report-grid">
+          <div class="card">
+            <h2 class="card-title" data-i18n="rep.insights">Insights</h2>
+            <ul class="insights" id="insights"></ul>
+          </div>
+          <div class="card">
+            <h2 class="card-title" data-i18n="rep.incomeSources">Income sources</h2>
+            <div id="income-list"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title" data-i18n="rep.download">Download PDF statement</h2>
+          <p class="muted small" data-i18n="rep.downloadHelp"></p>
+          <div class="pdf-buttons">
+            <a class="btn btn-primary" id="pdf-month" href="#">📄 <span id="pdf-month-label"></span></a>
+            <a class="btn" id="pdf-year" href="#">📄 <span id="pdf-year-label"></span></a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SETTINGS ================= -->
+      <section id="view-settings" class="stack" hidden>
+        <form class="card" id="profile-form" novalidate>
+          <h2 class="card-title" data-i18n="set.profile">Profile</h2>
+          <div class="field">
+            <label for="set-name" data-i18n="auth.displayName">Your name</label>
+            <input class="input" id="set-name" name="displayName" maxlength="60" required />
+          </div>
+          <p class="small muted"><span data-i18n="set.accountId"></span>: <strong id="set-id"></strong></p>
+          <button class="btn" type="submit" data-i18n="set.saveName">Save name</button>
+        </form>
+
+        <div class="card">
+          <h2 class="card-title" data-i18n="set.appearance">Appearance & language</h2>
+          <div class="row-between wrap" style="margin-bottom: 0.75rem">
+            <span data-i18n="set.language">Language</span>
+            <div class="segmented" id="lang-toggle" role="group">
+              <button type="button" data-lang="en">English</button>
+              <button type="button" data-lang="bn">বাংলা</button>
+            </div>
+          </div>
+          <div class="row-between wrap">
+            <span data-i18n="set.theme">Theme</span>
+            <div class="segmented" id="theme-toggle" role="group">
+              <button type="button" data-theme-choice="light">☀️ <span data-i18n="set.light">Light</span></button>
+              <button type="button" data-theme-choice="dark">🌙 <span data-i18n="set.dark">Dark</span></button>
+            </div>
+          </div>
+        </div>
+
+        <form class="card" id="password-form" novalidate>
+          <h2 class="card-title" data-i18n="set.security">Security</h2>
+          <p class="small muted" data-i18n="set.privacyNote"></p>
+          <div class="field">
+            <label for="cp-current" data-i18n="set.currentPassword">Current password</label>
+            <input class="input" id="cp-current" name="currentPassword" type="password" autocomplete="current-password" required />
+          </div>
+          <div class="field">
+            <label for="cp-new" data-i18n="auth.newPassword">New password</label>
+            <input class="input" id="cp-new" name="newPassword" type="password" autocomplete="new-password" required />
+            <span class="hint" data-i18n="auth.passwordHint"></span>
+          </div>
+          <div class="field">
+            <label for="cp-new2" data-i18n="auth.confirmPassword">Confirm password</label>
+            <input class="input" id="cp-new2" name="newPassword2" type="password" autocomplete="new-password" required />
+          </div>
+          <button class="btn" type="submit" data-i18n="set.changePassword">Change password</button>
+        </form>
+
+        <div class="card">
+          <h2 class="card-title" data-i18n="set.help">Help</h2>
+          <div class="grid">
+            <button class="btn" id="replay-tour" type="button">🎓 <span data-i18n="set.replayTour"></span></button>
+            <button class="btn" id="logout-btn" type="button">🚪 <span data-i18n="set.logout"></span></button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title" data-i18n="set.danger">Danger zone</h2>
+          <button class="btn btn-danger btn-block" id="delete-account" type="button" data-i18n="set.deleteAccount"></button>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottomnav" aria-label="Main">
+      <button class="navbtn" data-view="daily"><span class="icon">📅</span><span data-i18n="nav.daily">Daily</span></button>
+      <button class="navbtn" data-view="reports"><span class="icon">📊</span><span data-i18n="nav.reports">Reports</span></button>
+      <button class="navbtn" data-view="settings"><span class="icon">⚙️</span><span data-i18n="nav.settings">Settings</span></button>
+    </nav>
+
+    <!-- ================= DIALOGS ================= -->
+    <dialog id="edit-dialog">
+      <form novalidate>
+        <h2 data-i18n="daily.editTitle">Edit entry</h2>
+        <div class="segmented type-toggle" role="group" style="margin-bottom: 0.85rem">
+          <button type="button" data-type="expense" data-i18n="daily.expense">Expense</button>
+          <button type="button" data-type="income" data-i18n="daily.income">Income</button>
+        </div>
+        <input type="hidden" name="type" />
+        <div class="field">
+          <label for="ed-note" data-i18n="daily.occasion"></label>
+          <input class="input" id="ed-note" name="note" maxlength="200" required />
+        </div>
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="ed-amount" data-i18n="daily.amount"></label>
+            <input class="input" id="ed-amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" required />
+          </div>
+          <div class="field">
+            <label for="ed-date" data-i18n="daily.date"></label>
+            <input class="input" id="ed-date" name="date" type="date" required />
+          </div>
+        </div>
+        <div class="field">
+          <label for="ed-category" data-i18n="daily.category"></label>
+          <select class="input" id="ed-category" name="category"></select>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn" type="button" data-action="cancel" data-i18n="daily.cancel">Cancel</button>
+          <button class="btn btn-primary" type="submit" data-i18n="daily.save">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="unlock-dialog">
+      <form novalidate>
+        <h2>🔒 <span data-i18n="unlock.title"></span></h2>
+        <p class="small muted" data-i18n="unlock.body"></p>
+        <div class="field">
+          <label for="ul-password" data-i18n="auth.password"></label>
+          <input class="input" id="ul-password" name="password" type="password" autocomplete="current-password" required />
+        </div>
+        <div class="dialog-actions">
+          <button class="btn" type="button" data-action="cancel" data-i18n="daily.cancel"></button>
+          <button class="btn btn-primary" type="submit" data-i18n="unlock.btn"></button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="confirm-dialog">
+      <form novalidate>
+        <p id="confirm-text"></p>
+        <div class="dialog-actions">
+          <button class="btn" type="button" data-action="cancel" data-i18n="daily.cancel"></button>
+          <button class="btn btn-danger" type="submit" data-i18n="daily.delete"></button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="delete-account-dialog">
+      <form novalidate>
+        <h2 data-i18n="set.deleteAccount"></h2>
+        <p class="small" data-i18n="set.deleteConfirm"></p>
+        <div class="field">
+          <label for="da-password" data-i18n="auth.password"></label>
+          <input class="input" id="da-password" name="password" type="password" autocomplete="current-password" required />
+        </div>
+        <div class="dialog-actions">
+          <button class="btn" type="button" data-action="cancel" data-i18n="daily.cancel"></button>
+          <button class="btn btn-danger" type="submit" data-i18n="daily.delete"></button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="/shared/categories.js"></script>
+    <script src="/vendor/chart.js/chart.umd.min.js"></script>
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>

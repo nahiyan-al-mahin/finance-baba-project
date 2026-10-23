@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="robots" content="noindex" />
+    <title>Admin · Finance Baba</title>
+    <link rel="icon" href="/img/logo.svg" type="image/svg+xml" />
+    <script src="/js/theme-init.js"></script>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body data-title-key="adm.title">
+    <header class="topbar">
+      <a class="brand" href="/admin"><span class="brand-logo" aria-hidden="true">৳</span><span data-i18n="appName">Finance Baba</span></a>
+      <button class="icon-btn" type="button" data-action="toggle-lang" data-i18n="toggle.lang">বাংলা</button>
+      <button class="icon-btn" type="button" data-action="toggle-theme" data-i18n-title="toggle.theme">🌙</button>
+      <button class="icon-btn" type="button" id="logout-btn" data-i18n="set.logout">Log out</button>
+    </header>
+
+    <main class="container stack">
+      <div>
+        <h1 data-i18n="adm.title">Admin dashboard</h1>
+        <p class="muted small" data-i18n="adm.privacy"></p>
+      </div>
+
+      <div class="grid grid-2" id="stats">
+        <div class="card stat net"><div class="stat-label" data-i18n="adm.totalUsers"></div><div class="stat-value" id="st-total">–</div></div>
+        <div class="card stat"><div class="stat-label" data-i18n="adm.active7"></div><div class="stat-value" id="st-active">–</div></div>
+        <div class="card stat"><div class="stat-label" data-i18n="adm.new30"></div><div class="stat-value" id="st-new">–</div></div>
+        <div class="card stat expense"><div class="stat-label" data-i18n="adm.locked"></div><div class="stat-value" id="st-locked">–</div></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title" data-i18n="adm.users">Accounts</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr>
+                <th data-i18n="adm.id"></th>
+                <th data-i18n="adm.joined"></th>
+                <th data-i18n="adm.lastActive"></th>
+                <th data-i18n="adm.entries"></th>
+                <th data-i18n="adm.entries24"></th>
+                <th data-i18n="adm.failed"></th>
+                <th data-i18n="adm.pastEdits"></th>
+                <th data-i18n="adm.flags"></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="user-rows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title" data-i18n="adm.sentList">Warnings sent</h2>
+        <ul class="entry-list" id="warning-list"></ul>
+      </div>
+    </main>
+
+    <dialog id="warn-dialog">
+      <form novalidate>
+        <h2 id="warn-title"></h2>
+        <div class="field">
+          <label class="sr-only" for="warn-msg" data-i18n="adm.warn"></label>
+          <textarea class="input" id="warn-msg" name="message" rows="4" maxlength="500" data-i18n-placeholder="adm.warnPh" required></textarea>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn" type="button" data-action="cancel" data-i18n="daily.cancel"></button>
+          <button class="btn btn-primary" type="submit" data-i18n="adm.send"></button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="/js/admin.js"></script>
+  </body>
+</html>

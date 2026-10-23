@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="description" content="Finance Baba — track daily spending and income, see weekly, monthly and yearly analysis, and download PDF statements." />
+    <title>Finance Baba</title>
+    <link rel="icon" href="/img/logo.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <script src="/js/theme-init.js"></script>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/"><span class="brand-logo" aria-hidden="true">৳</span><span data-i18n="appName">Finance Baba</span></a>
+      <button class="icon-btn" type="button" data-action="toggle-lang" data-i18n="toggle.lang">বাংলা</button>
+      <button class="icon-btn" type="button" data-action="toggle-theme" data-i18n-title="toggle.theme">🌙</button>
+    </header>
+
+    <main class="auth-wrap">
+      <section class="hero">
+        <h1 data-i18n="hero.title">Know where every taka goes.</h1>
+        <p class="lead" data-i18n="hero.lead"></p>
+        <ul class="features">
+          <li><span class="ic">✍️</span><span data-i18n="hero.f1"></span></li>
+          <li><span class="ic">📊</span><span data-i18n="hero.f2"></span></li>
+          <li><span class="ic">📄</span><span data-i18n="hero.f3"></span></li>
+          <li><span class="ic">🔒</span><span data-i18n="hero.f4"></span></li>
+        </ul>
+      </section>
+
+      <section class="card auth-card" id="auth-card">
+        <!-- Login / signup -->
+        <div id="panel-main">
+          <div class="segmented tabs" role="tablist">
+            <button type="button" role="tab" data-tab="login" aria-pressed="true" data-i18n="auth.login">Log in</button>
+            <button type="button" role="tab" data-tab="signup" aria-pressed="false" data-i18n="auth.signup">Create account</button>
+          </div>
+
+          <form id="login-form" novalidate>
+            <div class="field">
+              <label for="login-username" data-i18n="auth.username">Username</label>
+              <input class="input" id="login-username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+            </div>
+            <div class="field">
+              <label for="login-password" data-i18n="auth.password">Password</label>
+              <div class="password-wrap">
+                <input class="input" id="login-password" name="password" type="password" autocomplete="current-password" required />
+                <button type="button" class="toggle-pw" data-i18n="auth.show">Show</button>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-block" type="submit" data-i18n="auth.login">Log in</button>
+            <p class="small" style="text-align: center; margin-top: 0.85rem">
+              <a href="#" id="show-recover" data-i18n="auth.forgot">Forgot password?</a>
+            </p>
+          </form>
+
+          <form id="signup-form" novalidate hidden>
+            <div class="field">
+              <label for="su-name" data-i18n="auth.displayName">Your name</label>
+              <input class="input" id="su-name" name="displayName" autocomplete="name" maxlength="60" required />
+            </div>
+            <div class="field">
+              <label for="su-username" data-i18n="auth.username">Username</label>
+              <input class="input" id="su-username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" required />
+              <span class="hint" data-i18n="auth.usernameHint"></span>
+            </div>
+            <div class="field">
+              <label for="su-password" data-i18n="auth.password">Password</label>
+              <div class="password-wrap">
+                <input class="input" id="su-password" name="password" type="password" autocomplete="new-password" minlength="8" required />
+                <button type="button" class="toggle-pw" data-i18n="auth.show">Show</button>
+              </div>
+              <span class="hint" data-i18n="auth.passwordHint"></span>
+            </div>
+            <div class="field">
+              <label for="su-password2" data-i18n="auth.confirmPassword">Confirm password</label>
+              <input class="input" id="su-password2" name="password2" type="password" autocomplete="new-password" required />
+            </div>
+            <button class="btn btn-primary btn-block" type="submit" data-i18n="auth.signup">Create account</button>
+          </form>
+        </div>
+
+        <!-- Forgot password -->
+        <form id="recover-form" novalidate hidden>
+          <h2 data-i18n="auth.recoverTitle"></h2>
+          <p class="muted small" data-i18n="auth.recoverHelp"></p>
+          <div class="field">
+            <label for="rc-username" data-i18n="auth.username">Username</label>
+            <input class="input" id="rc-username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+          </div>
+          <div class="field">
+            <label for="rc-code" data-i18n="auth.recoveryCode">Recovery code</label>
+            <input class="input" id="rc-code" name="recoveryCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXXX-XXXXX-XXXXX-XXXXX" required />
+          </div>
+          <div class="field">
+            <label for="rc-password" data-i18n="auth.newPassword">New password</label>
+            <input class="input" id="rc-password" name="newPassword" type="password" autocomplete="new-password" required />
+            <span class="hint" data-i18n="auth.passwordHint"></span>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit" data-i18n="auth.resetBtn">Reset password</button>
+          <p class="small" style="text-align: center; margin-top: 0.85rem">
+            <a href="#" id="back-to-login" data-i18n="auth.backToLogin">Back to log in</a>
+          </p>
+        </form>
+
+        <!-- Recovery code (shown once after signup / reset) -->
+        <div id="panel-recovery" hidden>
+          <h2 data-i18n="recovery.title"></h2>
+          <p class="small" data-i18n="recovery.body"></p>
+          <div class="recovery-code" id="recovery-code"></div>
+          <div class="row" style="margin: 0.75rem 0">
+            <button class="btn" type="button" id="copy-code" data-i18n="recovery.copy">Copy</button>
+            <button class="btn" type="button" id="download-code" data-i18n="recovery.download">Download</button>
+          </div>
+          <label class="row small" style="margin-bottom: 0.85rem">
+            <input type="checkbox" id="saved-check" />
+            <span data-i18n="recovery.confirm"></span>
+          </label>
+          <button class="btn btn-primary btn-block" type="button" id="continue-btn" disabled data-i18n="recovery.continue">Continue</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="/shared/categories.js"></script>
+    <script type="module" src="/js/auth.js"></script>
+  </body>
+</html>

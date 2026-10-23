@@ -1,0 +1,506 @@
+// English / Bangla translations and locale-aware formatting.
+const dict = {
+  en: {
+    appName: 'Finance Baba',
+    'nav.daily': 'Daily',
+    'nav.reports': 'Reports',
+    'nav.settings': 'Settings',
+    'toggle.lang': 'বাংলা',
+    'toggle.theme': 'Switch dark / light mode',
+
+    // Landing / auth
+    'hero.title': 'Know where every taka goes.',
+    'hero.lead': 'Write down what you spend and what you earn each day. Finance Baba adds it up and shows your week, month and year at a glance.',
+    'hero.f1': 'Log spending & income in seconds, from your phone',
+    'hero.f2': 'Daily totals plus weekly, monthly and yearly analysis',
+    'hero.f3': 'Download monthly & yearly PDF statements',
+    'hero.f4': 'Encrypted with your password — nobody else can read it',
+    'auth.login': 'Log in',
+    'auth.signup': 'Create account',
+    'auth.username': 'Username',
+    'auth.usernameHint': '3–30 letters, numbers, _ or .',
+    'auth.displayName': 'Your name',
+    'auth.password': 'Password',
+    'auth.passwordHint': 'At least 8 characters with letters and numbers',
+    'auth.confirmPassword': 'Confirm password',
+    'auth.show': 'Show',
+    'auth.hide': 'Hide',
+    'auth.forgot': 'Forgot password?',
+    'auth.backToLogin': 'Back to log in',
+    'auth.recoverTitle': 'Reset password with recovery code',
+    'auth.recoverHelp': 'Use the recovery code you saved when you created your account. Your data stays safe.',
+    'auth.recoveryCode': 'Recovery code',
+    'auth.newPassword': 'New password',
+    'auth.resetBtn': 'Reset password',
+    'auth.mismatch': 'Passwords do not match.',
+    'recovery.title': 'Save your recovery code',
+    'recovery.body': 'Your data is encrypted with your password. If you forget it, this code is the ONLY way to get back in. Write it down or download it and keep it somewhere safe. It will not be shown again.',
+    'recovery.copy': 'Copy',
+    'recovery.copied': 'Copied!',
+    'recovery.download': 'Download',
+    'recovery.confirm': 'I have saved my recovery code',
+    'recovery.continue': 'Continue',
+
+    // Daily
+    'daily.today': 'Today',
+    'daily.pastLocked': 'Past day — password needed to change',
+    'daily.unlocked': 'Unlocked for editing',
+    'daily.spent': 'Spent',
+    'daily.earned': 'Earned',
+    'daily.balance': 'Balance',
+    'daily.addTitle': 'Add an entry',
+    'daily.expense': 'Expense',
+    'daily.income': 'Income',
+    'daily.occasion': 'What was it for?',
+    'daily.occasionPhExpense': 'e.g. Lunch with friends, rickshaw to office',
+    'daily.occasionPhIncome': 'e.g. October salary, tuition fee received',
+    'daily.amount': 'Amount (৳)',
+    'daily.category': 'Category',
+    'daily.add': 'Add',
+    'daily.listTitle': 'Entries',
+    'daily.empty': 'Nothing logged for this day yet.',
+    'daily.totalSpent': "Total spent this day",
+    'daily.totalSpentToday': "Today's total spending",
+    'daily.prev': 'Previous day',
+    'daily.next': 'Next day',
+    'daily.pickDate': 'Pick a date',
+    'daily.goToday': 'Go to today',
+    'daily.edit': 'Edit',
+    'daily.delete': 'Delete',
+    'daily.editTitle': 'Edit entry',
+    'daily.date': 'Date',
+    'daily.save': 'Save',
+    'daily.cancel': 'Cancel',
+    'daily.confirmDelete': 'Delete this entry? This cannot be undone.',
+    'daily.added': 'Entry added',
+    'daily.saved': 'Changes saved',
+    'daily.deleted': 'Entry deleted',
+
+    // Unlock
+    'unlock.title': 'Confirm your password',
+    'unlock.body': 'This day has already passed. Enter your password to change it. Editing stays unlocked for 5 minutes.',
+    'unlock.btn': 'Unlock',
+
+    // Warnings
+    'warn.title': 'Message from the admin',
+    'warn.ack': 'I understand',
+
+    // Reports
+    'rep.week': 'Week',
+    'rep.month': 'Month',
+    'rep.year': 'Year',
+    'rep.prev': 'Previous',
+    'rep.next': 'Next',
+    'rep.income': 'Income',
+    'rep.expense': 'Expense',
+    'rep.net': 'Net balance',
+    'rep.avgDaily': 'Avg. spend / day',
+    'rep.entries': 'Entries',
+    'rep.trend': 'Income vs expense',
+    'rep.byCategory': 'Where your money went',
+    'rep.incomeSources': 'Income sources',
+    'rep.insights': 'Insights',
+    'rep.noData': 'No entries in this period yet.',
+    'rep.download': 'Download PDF statement',
+    'rep.downloadMonth': 'Monthly PDF',
+    'rep.downloadYear': 'Yearly PDF',
+    'rep.downloadHelp': 'Full details of every entry, totals and category breakdown. The PDF uses the language you have selected.',
+    'ins.moreThanPrev': 'You spent {pct} more than the previous {period}.',
+    'ins.lessThanPrev': 'You spent {pct} less than the previous {period}. Nice!',
+    'ins.sameAsPrev': 'Your spending is the same as the previous {period}.',
+    'ins.topCat': 'Biggest spending category: {cat} ({pct} of spending).',
+    'ins.biggest': 'Largest single expense: {note} — {amount} on {date}.',
+    'ins.busiest': 'Highest spending {unit}: {when} ({amount}).',
+    'ins.saving': 'You saved {pct} of your income.',
+    'ins.overspend': 'You spent {amount} more than you earned.',
+    'unit.day': 'day',
+    'unit.month': 'month',
+    'period.week': 'week',
+    'period.month': 'month',
+    'period.year': 'year',
+
+    // Settings
+    'set.profile': 'Profile',
+    'set.accountId': 'Account ID',
+    'set.saveName': 'Save name',
+    'set.appearance': 'Appearance & language',
+    'set.language': 'Language',
+    'set.theme': 'Theme',
+    'set.light': 'Light',
+    'set.dark': 'Dark',
+    'set.security': 'Security',
+    'set.currentPassword': 'Current password',
+    'set.changePassword': 'Change password',
+    'set.passwordChanged': 'Password changed. Other devices were logged out.',
+    'set.help': 'Help',
+    'set.replayTour': 'Show the welcome tour again',
+    'set.logout': 'Log out',
+    'set.danger': 'Danger zone',
+    'set.deleteAccount': 'Delete my account and all data',
+    'set.deleteConfirm': 'This permanently deletes your account and every entry. Enter your password to confirm.',
+    'set.privacyNote': 'Your entries are encrypted with a key that only your password (or recovery code) can unlock. Admins can only see how many users exist — never your name or your money.',
+    'set.nameSaved': 'Name updated',
+
+    // Onboarding
+    'onb.skip': 'Skip',
+    'onb.next': 'Next',
+    'onb.back': 'Back',
+    'onb.done': "Let's start",
+    'onb.s1.title': 'Welcome to Finance Baba!',
+    'onb.s1.body': 'Your personal money diary. Here is a quick tour of what is what — it takes 30 seconds.',
+    'onb.s2.title': 'Log as you go',
+    'onb.s2.body': 'On the Daily page, choose Expense or Income, type what it was for (e.g. "Bazar", "Rickshaw"), the amount and a category, then tap Add.',
+    'onb.s3.title': 'End-of-day total',
+    'onb.s3.body': 'Every entry is added up automatically. At the bottom of the day you always see how much you spent that day.',
+    'onb.s4.title': 'Weekly, monthly & yearly analysis',
+    'onb.s4.body': 'The Reports page shows charts, category breakdowns and tips for any week, month or year.',
+    'onb.s5.title': 'Past days are protected',
+    'onb.s5.body': 'Once a day is over, changing it needs your password. This keeps your records honest and safe.',
+    'onb.s6.title': 'PDF statements',
+    'onb.s6.body': 'Download a full monthly or yearly PDF with every entry from the Reports page.',
+    'onb.s7.title': 'Private & encrypted',
+    'onb.s7.body': 'Only you can read your data. Switch between English / বাংলা and light / dark mode from the top bar anytime.',
+
+    // Admin
+    'adm.title': 'Admin dashboard',
+    'adm.privacy': 'For privacy, admins only see anonymous account IDs and activity counts — never names, usernames, amounts or notes.',
+    'adm.totalUsers': 'Total users',
+    'adm.active7': 'Active (7 days)',
+    'adm.new30': 'New (30 days)',
+    'adm.locked': 'Locked now',
+    'adm.users': 'Accounts',
+    'adm.id': 'Account ID',
+    'adm.joined': 'Joined',
+    'adm.lastActive': 'Last active',
+    'adm.entries': 'Entries',
+    'adm.entries24': 'Entries (24h)',
+    'adm.failed': 'Failed logins',
+    'adm.pastEdits': 'Past-day edits',
+    'adm.warnings': 'Warnings',
+    'adm.flags': 'Flags',
+    'adm.warn': 'Warn',
+    'adm.warnTitle': 'Send a warning to {id}',
+    'adm.warnPh': 'Explain what looks suspicious and what the user should do.',
+    'adm.send': 'Send warning',
+    'adm.sent': 'Warning sent',
+    'adm.sentList': 'Warnings sent',
+    'adm.ackd': 'Acknowledged',
+    'adm.pending': 'Not read yet',
+    'adm.none': 'No users yet.',
+    'adm.noWarnings': 'No warnings sent yet.',
+    'flag.MANY_FAILED_LOGINS': 'Many failed logins',
+    'flag.ENTRY_FLOOD': 'Entry flood',
+    'flag.MANY_PAST_EDITS': 'Many past edits',
+    'flag.LOCKED': 'Locked',
+    never: 'Never',
+
+    // Errors
+    'err.INVALID_CREDENTIALS': 'Wrong username or password.',
+    'err.ACCOUNT_LOCKED': 'Too many wrong attempts. Try again in {min} minutes.',
+    'err.USERNAME_TAKEN': 'That username is already taken.',
+    'err.INVALID_USERNAME': 'Username must be 3–30 characters: letters, numbers, _ or .',
+    'err.WEAK_PASSWORD': 'Password needs at least 8 characters, including letters and numbers.',
+    'err.INVALID_NAME': 'Please enter your name (max 60 characters).',
+    'err.INVALID_RECOVERY': 'Wrong username or recovery code.',
+    'err.INVALID_AMOUNT': 'Enter an amount greater than 0.',
+    'err.INVALID_NOTE': 'Write what the money was for (max 200 characters).',
+    'err.INVALID_CATEGORY': 'Choose a category.',
+    'err.INVALID_DATE': 'That date is not valid.',
+    'err.FUTURE_DATE': 'You cannot add entries for future days.',
+    'err.PAST_DAY_LOCKED': 'This day is locked. Enter your password to change it.',
+    'err.TOO_MANY_REQUESTS': 'Too many requests. Please wait a moment.',
+    'err.UNAUTHENTICATED': 'Your session ended. Please log in again.',
+    'err.INVALID_MESSAGE': 'Message must be 5–500 characters.',
+    'err.NETWORK': 'Could not reach the server. Check your connection.',
+    'err.generic': 'Something went wrong. Please try again.',
+  },
+  bn: {
+    appName: 'ফাইন্যান্স বাবা',
+    'nav.daily': 'দৈনিক',
+    'nav.reports': 'রিপোর্ট',
+    'nav.settings': 'সেটিংস',
+    'toggle.lang': 'English',
+    'toggle.theme': 'ডার্ক / লাইট মোড পরিবর্তন',
+
+    'hero.title': 'প্রতিটি টাকার হিসাব রাখুন।',
+    'hero.lead': 'প্রতিদিন কোথায় কত খরচ করলেন আর কত আয় করলেন লিখে রাখুন। ফাইন্যান্স বাবা নিজেই যোগ করে সপ্তাহ, মাস ও বছরের হিসাব দেখাবে।',
+    'hero.f1': 'মোবাইল থেকে কয়েক সেকেন্ডে খরচ ও আয় লিখুন',
+    'hero.f2': 'দৈনিক মোট, সাথে সাপ্তাহিক, মাসিক ও বার্ষিক বিশ্লেষণ',
+    'hero.f3': 'মাসিক ও বার্ষিক PDF স্টেটমেন্ট ডাউনলোড',
+    'hero.f4': 'আপনার পাসওয়ার্ড দিয়ে এনক্রিপ্টেড — অন্য কেউ পড়তে পারবে না',
+    'auth.login': 'লগ ইন',
+    'auth.signup': 'অ্যাকাউন্ট খুলুন',
+    'auth.username': 'ইউজারনেম',
+    'auth.usernameHint': '৩–৩০ অক্ষর: ইংরেজি অক্ষর, সংখ্যা, _ বা .',
+    'auth.displayName': 'আপনার নাম',
+    'auth.password': 'পাসওয়ার্ড',
+    'auth.passwordHint': 'কমপক্ষে ৮ অক্ষর, অক্ষর ও সংখ্যা দুটোই থাকতে হবে',
+    'auth.confirmPassword': 'পাসওয়ার্ড আবার লিখুন',
+    'auth.show': 'দেখান',
+    'auth.hide': 'লুকান',
+    'auth.forgot': 'পাসওয়ার্ড ভুলে গেছেন?',
+    'auth.backToLogin': 'লগ ইনে ফিরে যান',
+    'auth.recoverTitle': 'রিকভারি কোড দিয়ে পাসওয়ার্ড রিসেট',
+    'auth.recoverHelp': 'অ্যাকাউন্ট খোলার সময় যে রিকভারি কোড সংরক্ষণ করেছিলেন সেটি দিন। আপনার তথ্য নিরাপদ থাকবে।',
+    'auth.recoveryCode': 'রিকভারি কোড',
+    'auth.newPassword': 'নতুন পাসওয়ার্ড',
+    'auth.resetBtn': 'পাসওয়ার্ড রিসেট করুন',
+    'auth.mismatch': 'দুটি পাসওয়ার্ড মিলছে না।',
+    'recovery.title': 'আপনার রিকভারি কোড সংরক্ষণ করুন',
+    'recovery.body': 'আপনার তথ্য আপনার পাসওয়ার্ড দিয়ে এনক্রিপ্ট করা। পাসওয়ার্ড ভুলে গেলে এই কোডই ঢোকার একমাত্র উপায়। লিখে রাখুন বা ডাউনলোড করে নিরাপদ জায়গায় রাখুন। এটি আর দেখানো হবে না।',
+    'recovery.copy': 'কপি',
+    'recovery.copied': 'কপি হয়েছে!',
+    'recovery.download': 'ডাউনলোড',
+    'recovery.confirm': 'আমি রিকভারি কোড সংরক্ষণ করেছি',
+    'recovery.continue': 'এগিয়ে যান',
+
+    'daily.today': 'আজ',
+    'daily.pastLocked': 'পুরনো দিন — পরিবর্তনে পাসওয়ার্ড লাগবে',
+    'daily.unlocked': 'এডিটের জন্য আনলক করা',
+    'daily.spent': 'খরচ',
+    'daily.earned': 'আয়',
+    'daily.balance': 'ব্যালেন্স',
+    'daily.addTitle': 'নতুন এন্ট্রি',
+    'daily.expense': 'খরচ',
+    'daily.income': 'আয়',
+    'daily.occasion': 'কিসের জন্য?',
+    'daily.occasionPhExpense': 'যেমন: বন্ধুদের সাথে দুপুরের খাবার, অফিসে রিকশা',
+    'daily.occasionPhIncome': 'যেমন: অক্টোবরের বেতন, টিউশনির টাকা',
+    'daily.amount': 'পরিমাণ (৳)',
+    'daily.category': 'খাত',
+    'daily.add': 'যোগ করুন',
+    'daily.listTitle': 'এন্ট্রিসমূহ',
+    'daily.empty': 'এই দিনে এখনো কিছু লেখা হয়নি।',
+    'daily.totalSpent': 'এই দিনের মোট খরচ',
+    'daily.totalSpentToday': 'আজকের মোট খরচ',
+    'daily.prev': 'আগের দিন',
+    'daily.next': 'পরের দিন',
+    'daily.pickDate': 'তারিখ বাছাই করুন',
+    'daily.goToday': 'আজকে যান',
+    'daily.edit': 'এডিট',
+    'daily.delete': 'মুছুন',
+    'daily.editTitle': 'এন্ট্রি এডিট',
+    'daily.date': 'তারিখ',
+    'daily.save': 'সংরক্ষণ',
+    'daily.cancel': 'বাতিল',
+    'daily.confirmDelete': 'এই এন্ট্রি মুছে ফেলবেন? এটি আর ফেরানো যাবে না।',
+    'daily.added': 'এন্ট্রি যোগ হয়েছে',
+    'daily.saved': 'পরিবর্তন সংরক্ষিত হয়েছে',
+    'daily.deleted': 'এন্ট্রি মুছে ফেলা হয়েছে',
+
+    'unlock.title': 'পাসওয়ার্ড নিশ্চিত করুন',
+    'unlock.body': 'এই দিনটি পার হয়ে গেছে। পরিবর্তন করতে পাসওয়ার্ড দিন। ৫ মিনিট এডিট আনলক থাকবে।',
+    'unlock.btn': 'আনলক',
+
+    'warn.title': 'অ্যাডমিনের বার্তা',
+    'warn.ack': 'বুঝেছি',
+
+    'rep.week': 'সপ্তাহ',
+    'rep.month': 'মাস',
+    'rep.year': 'বছর',
+    'rep.prev': 'আগের',
+    'rep.next': 'পরের',
+    'rep.income': 'আয়',
+    'rep.expense': 'খরচ',
+    'rep.net': 'নিট ব্যালেন্স',
+    'rep.avgDaily': 'দৈনিক গড় খরচ',
+    'rep.entries': 'এন্ট্রি',
+    'rep.trend': 'আয় বনাম খরচ',
+    'rep.byCategory': 'টাকা কোথায় গেল',
+    'rep.incomeSources': 'আয়ের উৎস',
+    'rep.insights': 'বিশ্লেষণ',
+    'rep.noData': 'এই সময়ে এখনো কোনো এন্ট্রি নেই।',
+    'rep.download': 'PDF স্টেটমেন্ট ডাউনলোড',
+    'rep.downloadMonth': 'মাসিক PDF',
+    'rep.downloadYear': 'বার্ষিক PDF',
+    'rep.downloadHelp': 'প্রতিটি এন্ট্রির পূর্ণ বিবরণ, মোট হিসাব ও খাতভিত্তিক বিশ্লেষণ। PDF আপনার নির্বাচিত ভাষায় তৈরি হবে।',
+    'ins.moreThanPrev': 'আগের {period}ের চেয়ে {pct} বেশি খরচ করেছেন।',
+    'ins.lessThanPrev': 'আগের {period}ের চেয়ে {pct} কম খরচ করেছেন। চমৎকার!',
+    'ins.sameAsPrev': 'আপনার খরচ আগের {period}ের সমান।',
+    'ins.topCat': 'সবচেয়ে বেশি খরচের খাত: {cat} (মোট খরচের {pct})।',
+    'ins.biggest': 'সবচেয়ে বড় একক খরচ: {note} — {amount}, {date}।',
+    'ins.busiest': 'সবচেয়ে বেশি খরচের {unit}: {when} ({amount})।',
+    'ins.saving': 'আয়ের {pct} সঞ্চয় করেছেন।',
+    'ins.overspend': 'আয়ের চেয়ে {amount} বেশি খরচ করেছেন।',
+    'unit.day': 'দিন',
+    'unit.month': 'মাস',
+    'period.week': 'সপ্তাহ',
+    'period.month': 'মাস',
+    'period.year': 'বছর',
+
+    'set.profile': 'প্রোফাইল',
+    'set.accountId': 'অ্যাকাউন্ট আইডি',
+    'set.saveName': 'নাম সংরক্ষণ',
+    'set.appearance': 'চেহারা ও ভাষা',
+    'set.language': 'ভাষা',
+    'set.theme': 'থিম',
+    'set.light': 'লাইট',
+    'set.dark': 'ডার্ক',
+    'set.security': 'নিরাপত্তা',
+    'set.currentPassword': 'বর্তমান পাসওয়ার্ড',
+    'set.changePassword': 'পাসওয়ার্ড পরিবর্তন',
+    'set.passwordChanged': 'পাসওয়ার্ড পরিবর্তন হয়েছে। অন্য ডিভাইস থেকে লগ আউট করা হয়েছে।',
+    'set.help': 'সাহায্য',
+    'set.replayTour': 'পরিচিতি স্লাইড আবার দেখুন',
+    'set.logout': 'লগ আউট',
+    'set.danger': 'সতর্কতা',
+    'set.deleteAccount': 'আমার অ্যাকাউন্ট ও সব তথ্য মুছে ফেলুন',
+    'set.deleteConfirm': 'এটি আপনার অ্যাকাউন্ট ও সব এন্ট্রি স্থায়ীভাবে মুছে ফেলবে। নিশ্চিত করতে পাসওয়ার্ড দিন।',
+    'set.privacyNote': 'আপনার এন্ট্রিগুলো এমন একটি চাবি দিয়ে এনক্রিপ্ট করা যা শুধু আপনার পাসওয়ার্ড (বা রিকভারি কোড) খুলতে পারে। অ্যাডমিন শুধু কতজন ব্যবহারকারী আছে তা দেখতে পারেন — আপনার নাম বা টাকার হিসাব কখনো নয়।',
+    'set.nameSaved': 'নাম আপডেট হয়েছে',
+
+    'onb.skip': 'বাদ দিন',
+    'onb.next': 'পরবর্তী',
+    'onb.back': 'পেছনে',
+    'onb.done': 'শুরু করি',
+    'onb.s1.title': 'ফাইন্যান্স বাবায় স্বাগতম!',
+    'onb.s1.body': 'আপনার ব্যক্তিগত টাকার ডায়েরি। কোনটা কী — ৩০ সেকেন্ডে দেখে নিন।',
+    'onb.s2.title': 'সাথে সাথে লিখুন',
+    'onb.s2.body': 'দৈনিক পেজে খরচ বা আয় বাছাই করুন, কিসের জন্য লিখুন (যেমন "বাজার", "রিকশা"), পরিমাণ ও খাত দিন, তারপর যোগ করুন চাপুন।',
+    'onb.s3.title': 'দিন শেষের মোট হিসাব',
+    'onb.s3.body': 'প্রতিটি এন্ট্রি নিজে নিজেই যোগ হয়। দিনের নিচে সবসময় দেখবেন সেদিন মোট কত খরচ হলো।',
+    'onb.s4.title': 'সাপ্তাহিক, মাসিক ও বার্ষিক বিশ্লেষণ',
+    'onb.s4.body': 'রিপোর্ট পেজে যেকোনো সপ্তাহ, মাস বা বছরের চার্ট, খাতভিত্তিক হিসাব ও পরামর্শ দেখুন।',
+    'onb.s5.title': 'পুরনো দিন সুরক্ষিত',
+    'onb.s5.body': 'দিন পার হয়ে গেলে সেটা পরিবর্তন করতে পাসওয়ার্ড লাগবে। এতে আপনার হিসাব সঠিক ও নিরাপদ থাকে।',
+    'onb.s6.title': 'PDF স্টেটমেন্ট',
+    'onb.s6.body': 'রিপোর্ট পেজ থেকে প্রতিটি এন্ট্রিসহ পূর্ণ মাসিক বা বার্ষিক PDF ডাউনলোড করুন।',
+    'onb.s7.title': 'ব্যক্তিগত ও এনক্রিপ্টেড',
+    'onb.s7.body': 'আপনার তথ্য শুধু আপনিই পড়তে পারবেন। উপরের বার থেকে যেকোনো সময় English / বাংলা এবং লাইট / ডার্ক মোড বদলান।',
+
+    'adm.title': 'অ্যাডমিন ড্যাশবোর্ড',
+    'adm.privacy': 'গোপনীয়তার জন্য অ্যাডমিন শুধু বেনামী অ্যাকাউন্ট আইডি ও কার্যকলাপের সংখ্যা দেখেন — নাম, ইউজারনেম, টাকার পরিমাণ বা বিবরণ কখনো নয়।',
+    'adm.totalUsers': 'মোট ব্যবহারকারী',
+    'adm.active7': 'সক্রিয় (৭ দিন)',
+    'adm.new30': 'নতুন (৩০ দিন)',
+    'adm.locked': 'এখন লক',
+    'adm.users': 'অ্যাকাউন্টসমূহ',
+    'adm.id': 'অ্যাকাউন্ট আইডি',
+    'adm.joined': 'যোগদান',
+    'adm.lastActive': 'সর্বশেষ সক্রিয়',
+    'adm.entries': 'এন্ট্রি',
+    'adm.entries24': 'এন্ট্রি (২৪ ঘণ্টা)',
+    'adm.failed': 'ভুল লগইন',
+    'adm.pastEdits': 'পুরনো দিনে এডিট',
+    'adm.warnings': 'সতর্কবার্তা',
+    'adm.flags': 'চিহ্ন',
+    'adm.warn': 'সতর্ক করুন',
+    'adm.warnTitle': '{id}-কে সতর্কবার্তা পাঠান',
+    'adm.warnPh': 'কী সন্দেহজনক মনে হচ্ছে এবং ব্যবহারকারীর কী করা উচিত লিখুন।',
+    'adm.send': 'সতর্কবার্তা পাঠান',
+    'adm.sent': 'সতর্কবার্তা পাঠানো হয়েছে',
+    'adm.sentList': 'পাঠানো সতর্কবার্তা',
+    'adm.ackd': 'পড়েছেন',
+    'adm.pending': 'এখনো পড়েননি',
+    'adm.none': 'এখনো কোনো ব্যবহারকারী নেই।',
+    'adm.noWarnings': 'এখনো কোনো সতর্কবার্তা পাঠানো হয়নি।',
+    'flag.MANY_FAILED_LOGINS': 'অনেক ভুল লগইন',
+    'flag.ENTRY_FLOOD': 'অস্বাভাবিক এন্ট্রি',
+    'flag.MANY_PAST_EDITS': 'অনেক পুরনো এডিট',
+    'flag.LOCKED': 'লক',
+    never: 'কখনো না',
+
+    'err.INVALID_CREDENTIALS': 'ইউজারনেম বা পাসওয়ার্ড ভুল।',
+    'err.ACCOUNT_LOCKED': 'অনেকবার ভুল চেষ্টা হয়েছে। {min} মিনিট পর আবার চেষ্টা করুন।',
+    'err.USERNAME_TAKEN': 'এই ইউজারনেম ইতিমধ্যে নেওয়া হয়েছে।',
+    'err.INVALID_USERNAME': 'ইউজারনেম ৩–৩০ অক্ষরের হতে হবে: ইংরেজি অক্ষর, সংখ্যা, _ বা .',
+    'err.WEAK_PASSWORD': 'পাসওয়ার্ডে কমপক্ষে ৮ অক্ষর এবং অক্ষর ও সংখ্যা দুটোই লাগবে।',
+    'err.INVALID_NAME': 'আপনার নাম লিখুন (সর্বোচ্চ ৬০ অক্ষর)।',
+    'err.INVALID_RECOVERY': 'ইউজারনেম বা রিকভারি কোড ভুল।',
+    'err.INVALID_AMOUNT': '০-এর বেশি পরিমাণ লিখুন।',
+    'err.INVALID_NOTE': 'টাকা কিসের জন্য তা লিখুন (সর্বোচ্চ ২০০ অক্ষর)।',
+    'err.INVALID_CATEGORY': 'একটি খাত বাছাই করুন।',
+    'err.INVALID_DATE': 'তারিখটি সঠিক নয়।',
+    'err.FUTURE_DATE': 'ভবিষ্যতের দিনের এন্ট্রি দেওয়া যাবে না।',
+    'err.PAST_DAY_LOCKED': 'এই দিনটি লক করা। পরিবর্তন করতে পাসওয়ার্ড দিন।',
+    'err.TOO_MANY_REQUESTS': 'অনেক বেশি অনুরোধ। একটু অপেক্ষা করুন।',
+    'err.UNAUTHENTICATED': 'সেশন শেষ হয়েছে। আবার লগ ইন করুন।',
+    'err.INVALID_MESSAGE': 'বার্তা ৫–৫০০ অক্ষরের হতে হবে।',
+    'err.NETWORK': 'সার্ভারে পৌঁছানো যাচ্ছে না। ইন্টারনেট সংযোগ দেখুন।',
+    'err.generic': 'কিছু একটা ভুল হয়েছে। আবার চেষ্টা করুন।',
+  },
+};
+
+const listeners = new Set();
+
+export function getLang() {
+  return document.documentElement.lang === 'bn' ? 'bn' : 'en';
+}
+
+export function t(key, vars = {}) {
+  const str = dict[getLang()][key] ?? dict.en[key] ?? key;
+  return str.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? `{${k}}`));
+}
+
+export function applyI18n(root = document) {
+  root.querySelectorAll('[data-i18n]').forEach((el) => (el.textContent = t(el.dataset.i18n)));
+  root.querySelectorAll('[data-i18n-placeholder]').forEach((el) => (el.placeholder = t(el.dataset.i18nPlaceholder)));
+  root.querySelectorAll('[data-i18n-title]').forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
+    el.setAttribute('aria-label', el.title);
+  });
+  document.title = root === document && document.body.dataset.titleKey ? `${t(document.body.dataset.titleKey)} · ${t('appName')}` : document.title;
+}
+
+export function setLang(lang) {
+  document.documentElement.lang = lang === 'bn' ? 'bn' : 'en';
+  try {
+    localStorage.setItem('fb-lang', document.documentElement.lang);
+  } catch {}
+  applyI18n();
+  listeners.forEach((fn) => fn());
+}
+
+export function onLangChange(fn) {
+  listeners.add(fn);
+}
+
+// ---- Formatting
+const locale = () => (getLang() === 'bn' ? 'bn-BD' : 'en-US');
+const dateLocale = () => (getLang() === 'bn' ? 'bn-BD' : 'en-GB');
+const asDate = (str) => new Date(`${str}T00:00:00Z`);
+
+export const fmt = {
+  money(n) {
+    const abs = new Intl.NumberFormat(locale(), { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Math.abs(n));
+    return `${n < 0 ? '−' : ''}৳${abs}`;
+  },
+  number(n) {
+    return new Intl.NumberFormat(locale()).format(n);
+  },
+  pct(n) {
+    return `${new Intl.NumberFormat(locale(), { maximumFractionDigits: 1 }).format(Math.abs(n))}%`;
+  },
+  date(str, opts = { day: 'numeric', month: 'short', year: 'numeric' }) {
+    return new Intl.DateTimeFormat(dateLocale(), { ...opts, timeZone: 'UTC' }).format(asDate(str));
+  },
+  longDate(str) {
+    return fmt.date(str, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  },
+  monthYear(str) {
+    return fmt.date(str, { month: 'long', year: 'numeric' });
+  },
+  monthShort(ym) {
+    return fmt.date(`${ym}-01`, { month: 'short' });
+  },
+  year(str) {
+    return fmt.date(str, { year: 'numeric' });
+  },
+  time(ms) {
+    return new Intl.DateTimeFormat(dateLocale(), { hour: 'numeric', minute: '2-digit' }).format(new Date(ms));
+  },
+  dateTime(ms) {
+    if (!ms) return t('never');
+    return new Intl.DateTimeFormat(dateLocale(), { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(ms));
+  },
+};
+
+export function categoryLabel(type, id) {
+  const cat = (window.FB_CATEGORIES[type] || []).find((c) => c.id === id);
+  return cat ? cat[getLang()] : id;
+}
+
+export function categoryIcon(type, id) {
+  const cat = (window.FB_CATEGORIES[type] || []).find((c) => c.id === id);
+  return cat ? cat.icon : '•';
+}
