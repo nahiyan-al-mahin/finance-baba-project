@@ -47,6 +47,7 @@ app.use(
 const api = express.Router();
 api.use(rateLimit({ windowMs: 60 * 1000, limit: 300, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'TOO_MANY_REQUESTS' } }));
 api.use(express.json({ limit: '20kb' }));
+api.get('/health', (req, res) => res.json({ ok: true })); // for hosting platforms' health checks
 api.use(cookieParser());
 api.use((req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -77,8 +78,27 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'SERVER_ERROR' });
 });
 
+/**
+ * On hosts without a terminal, set ADMIN_USERNAME + ADMIN_PASSWORD once: the admin account is
+ * created at start-up if it does not exist yet. Remove ADMIN_PASSWORD afterwards.
+ */
+async function ensureAdminFromEnv() {
+  const { ADMIN_USERNAME, ADMIN_PASSWORD } = process.env;
+  if (!ADMIN_USERNAME || !ADMIN_PASSWORD) return;
+  const users = require('./users');
+  if (users.findByUsername(ADMIN_USERNAME)) return;
+  try {
+    await users.createUser({ username: ADMIN_USERNAME, displayName: 'Admin', password: ADMIN_PASSWORD, timezone: config.DEFAULT_TZ, role: 'admin' });
+    console.log(`[finance-baba] Admin "${users.normalizeUsername(ADMIN_USERNAME)}" created. You can now remove ADMIN_PASSWORD.`);
+  } catch (err) {
+    console.error(`[finance-baba] Could not create admin from env: ${err.code || err.message}`);
+  }
+}
+
 if (require.main === module) {
-  app.listen(config.PORT, () => console.log(`Finance Baba running at http://localhost:${config.PORT}`));
+  ensureAdminFromEnv().then(() =>
+    app.listen(config.PORT, () => console.log(`Finance Baba running at http://localhost:${config.PORT}`))
+  );
 }
 
 module.exports = app;

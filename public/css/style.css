@@ -2164,3 +2164,31 @@ table.data th {
 :root[data-theme='sketch'] .brand-logo {
   filter: drop-shadow(2px 2px 0 var(--border));
 }
+
+/* ========== Footer ========== */
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 2rem auto 0.5rem;
+  padding: 0.85rem 1rem;
+  max-width: 1000px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  border-top: 1px dashed var(--border);
+}
+.site-footer img {
+  flex: none;
+}
+.app-main > .site-footer {
+  margin-top: 2.5rem;
+}
+body > .site-footer {
+  margin-bottom: 1.5rem;
+}
+:root[data-theme='sketch'] .site-footer {
+  border-top: 2px dashed var(--border);
+}

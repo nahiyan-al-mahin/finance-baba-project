@@ -101,6 +101,58 @@ scripts/create-admin.js
 test/api.test.js
 ```
 
+## Deploying
+
+The app is **one Node.js process plus one SQLite file**, so it needs a host that:
+
+1. runs a long-lived Node 22+ server (not "serverless" functions), and
+2. gives you a **persistent disk/volume** for the `data/` folder (otherwise every redeploy wipes all accounts).
+
+Good fits: **Railway** (easiest), **Render** (paid plan with a disk), **Fly.io**, or any small VPS.
+
+### Environment variables (all hosts)
+
+| Variable | Value |
+| --- | --- |
+| `NODE_ENV` | `production` (secure cookies, HTTPS-only headers) |
+| `TRUST_PROXY` | `1` (the host puts a proxy in front of the app) |
+| `APP_SECRET` | 64 hex chars: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. **Save a copy somewhere safe** — without it the data can never be decrypted. |
+| `DATA_DIR` | the mount path of your persistent volume, e.g. `/data` |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | optional: creates the first admin at start-up. Remove `ADMIN_PASSWORD` once the log says the admin was created. |
+| `GOOGLE_CLIENT_ID` | optional, only when you enable Google sign-in |
+
+Health check path: `/api/health`.
+
+### Railway (recommended)
+
+1. Merge the work into your `main` branch (or pick the branch in step 3).
+2. On [railway.com](https://railway.com) → **New Project → Deploy from GitHub repo** → choose `finance-baba-project`.
+3. In the service → **Settings**: Source branch = the branch you want; Start command = `npm start` (detected automatically). Railway also understands the included `Dockerfile`.
+4. **Add a Volume** (right-click the service → *Attach volume*) with mount path `/data`.
+5. **Variables**: add the table above (`DATA_DIR=/data`).
+6. **Settings → Networking → Generate Domain**. Open the URL — you get HTTPS automatically.
+
+### Render
+
+New **Web Service** from the repo → Runtime *Node*, Build `npm ci`, Start `npm start` → add a **Disk** mounted at `/data` (needs a paid instance; the free tier has no disk and would lose data) → add the variables above.
+
+### Your own server (VPS)
+
+```bash
+git clone https://github.com/nahiyan-al-mahin/finance-baba-project.git && cd finance-baba-project
+npm ci --omit=dev
+cp .env.example .env   # fill in NODE_ENV=production, TRUST_PROXY=1, APP_SECRET, DATA_DIR
+npx pm2 start server/index.js --name finance-baba && npx pm2 save
+```
+
+Put [Caddy](https://caddyserver.com) in front for automatic HTTPS (`your-domain.com { reverse_proxy localhost:3000 }`).
+
+### After deploying
+
+- Back up the volume (`finance-baba.db`) regularly, and keep `APP_SECRET` stored separately from those backups.
+- Run one instance only: sessions live in memory, and a restart logs everyone out (by design).
+- Adding Google later: add your live URL (e.g. `https://your-app.up.railway.app`) to *Authorized JavaScript origins* in Google Cloud, then set `GOOGLE_CLIENT_ID` and redeploy.
+
 ## Going to production
 
 - Run behind HTTPS (Caddy, nginx, or a host such as Render or Railway). Set `NODE_ENV=production` and `TRUST_PROXY=1`.
