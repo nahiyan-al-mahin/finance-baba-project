@@ -9,7 +9,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fb-test-'));
 process.env.DATA_DIR = tmp;
 process.env.APP_SECRET = 'a'.repeat(64);
 
-const app = require('../server/index');
+const app = require('../server/app');
 const db = require('../server/db');
 const users = require('../server/users');
 const { todayIn, addDays } = require('../server/dates');
@@ -23,8 +23,9 @@ before(async () => {
   base = `http://127.0.0.1:${server.address().port}/api`;
 });
 
-after(() => {
+after(async () => {
   server.close();
+  await db.close();
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 
@@ -60,7 +61,7 @@ test('full user flow: signup, entries, encryption, past-day lock, reports, recov
   assert.deepEqual([r.body.totals.expense, r.body.totals.income, r.body.totals.net], [250.5, 1000, 749.5]);
 
   // Nothing readable at rest
-  const raw = JSON.stringify(db.prepare('SELECT * FROM entries').all()) + JSON.stringify(db.prepare('SELECT * FROM users').all());
+  const raw = JSON.stringify(await db.all('SELECT * FROM entries')) + JSON.stringify(await db.all('SELECT * FROM users')) + JSON.stringify(await db.all('SELECT * FROM sessions'));
   for (const secret of ['বিরিয়ানি', 'lunch', '250.5', 'Alice', 'alice', 'secret123']) assert.ok(!raw.includes(secret), `"${secret}" leaked`);
 
   // Past days need the password
@@ -91,7 +92,7 @@ test('full user flow: signup, entries, encryption, past-day lock, reports, recov
   await bob('POST', '/auth/signup', { username: 'bob', displayName: 'Bob', password: 'secret456', timezone: 'Asia/Dhaka' });
   r = await bob('GET', '/entries');
   assert.equal(r.body.entries.length, 0);
-  const aliceEntry = db.prepare('SELECT id FROM entries LIMIT 1').get().id;
+  const aliceEntry = (await db.one('SELECT id FROM entries ORDER BY id LIMIT 1')).id;
   r = await bob('DELETE', `/entries/${aliceEntry}`);
   assert.equal(r.status, 404);
 
@@ -156,7 +157,8 @@ test('Google sign-in: first-time signup, returning login, linking, unlinking', a
   await c1('POST', '/entries', { date: today, type: 'expense', amount: 99, category: 'food', note: 'Fuchka' });
   r = await c1('POST', '/auth/google/signup', { signupToken, username: 'karim2', displayName: 'K', password: 'karim1234' });
   assert.equal(r.body.error, 'GOOGLE_EXPIRED'); // single use
-  assert.ok(!JSON.stringify(db.prepare('SELECT * FROM users').all()).includes('sub-karim'));
+  assert.ok(!JSON.stringify(await db.all('SELECT * FROM users')).includes('sub-karim'));
+  assert.ok(!JSON.stringify(await db.all('SELECT * FROM google_pending')).includes('karim'));
 
   // Returning user: Google alone unlocks the encrypted data
   const c2 = client();
@@ -184,4 +186,28 @@ test('Google sign-in: first-time signup, returning login, linking, unlinking', a
   assert.equal(r.body.user.googleEmail, null);
   r = await client()('POST', '/auth/google', { credential: 'sub-dina' });
   assert.equal(r.body.needsSignup, true);
+});
+
+test('sessions live in the database and only the cookie can unlock them', async () => {
+  const dave = client();
+  let r = await dave('POST', '/auth/signup', { username: 'dave', displayName: 'Dave', password: 'dave12345' });
+  assert.equal(r.status, 201);
+  const rows = await db.all("SELECT s.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE u.public_id = $1", [r.body.user.id]);
+  assert.equal(rows.length, 1);
+  assert.match(rows[0].id_hash, /^[0-9a-f]{64}$/); // only a hash of the cookie token is stored
+
+  // Past-day unlock is remembered across requests (stored on the session row)
+  await dave('POST', '/auth/unlock', { password: 'dave12345' });
+  r = await dave('POST', '/entries', { date: yesterday, type: 'expense', amount: 5, category: 'food', note: 'Tea' });
+  assert.equal(r.status, 201);
+
+  // Removing the row logs the user out immediately
+  await db.run('DELETE FROM sessions WHERE id_hash = $1', [rows[0].id_hash]);
+  r = await dave('GET', '/entries');
+  assert.equal(r.status, 401);
+
+  // Login attempts are counted in the shared rate-limit table
+  assert.ok((await db.all("SELECT * FROM rate_limits WHERE key LIKE 'auth:%'")).length > 0);
+  r = await dave('DELETE', '/entries/not-a-number');
+  assert.equal(r.status, 401);
 });

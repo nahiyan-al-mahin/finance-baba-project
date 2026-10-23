@@ -12,8 +12,14 @@ try {
 }
 
 const isProd = process.env.NODE_ENV === 'production';
+const onVercel = !!process.env.VERCEL;
 const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, 'data');
-fs.mkdirSync(DATA_DIR, { recursive: true });
+
+/** Local data folder (PGlite database, generated secret). Created on first use only. */
+function dataDir() {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  return DATA_DIR;
+}
 
 // The server secret is mixed into every key derivation (as a "pepper").
 // A stolen database without this secret is useless, even for weak passwords.
@@ -23,7 +29,10 @@ function loadSecret() {
     if (buf.length < 32) throw new Error('APP_SECRET must be at least 64 hex characters');
     return buf;
   }
-  const file = path.join(DATA_DIR, 'secret.key');
+  if (onVercel || process.env.DATABASE_URL) {
+    throw new Error('APP_SECRET is not set. Add it to your environment variables (see README → Deploying).');
+  }
+  const file = path.join(dataDir(), 'secret.key');
   if (!fs.existsSync(file)) {
     fs.writeFileSync(file, crypto.randomBytes(32).toString('hex'), { mode: 0o600 });
     console.warn(`[finance-baba] Generated a new server secret at ${file}. Back it up: losing it makes all data unreadable.`);
@@ -34,14 +43,16 @@ function loadSecret() {
 module.exports = {
   ROOT,
   DATA_DIR,
+  dataDir,
   isProd,
+  onVercel,
   PORT: Number(process.env.PORT) || 3000,
-  DB_PATH: process.env.DB_PATH || path.join(DATA_DIR, 'finance-baba.db'),
+  DATABASE_URL: process.env.DATABASE_URL || '',
   SECRET: loadSecret(),
-  TRUST_PROXY: process.env.TRUST_PROXY === '1',
+  TRUST_PROXY: process.env.TRUST_PROXY === '1' || onVercel,
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
   COOKIE_NAME: 'fb_sid',
-  COOKIE_SECURE: isProd,
+  COOKIE_SECURE: isProd || onVercel,
   SESSION_IDLE_MS: 30 * 60 * 1000, // logged out after 30 min of inactivity
   SESSION_MAX_MS: 12 * 60 * 60 * 1000, // and after 12 h at most
   UNLOCK_MS: 5 * 60 * 1000, // past-day editing stays unlocked for 5 min after entering the password

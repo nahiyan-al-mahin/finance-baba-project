@@ -7,7 +7,9 @@ ENV NODE_ENV=production \
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY . .
-# The database and secret key live here: mount a persistent volume at /data
+RUN npm run build
+# Set DATABASE_URL (Neon) and APP_SECRET. Without DATABASE_URL a local database is kept in /data,
+# so mount a persistent volume there.
 VOLUME ["/data"]
 EXPOSE 3000
 CMD ["node", "server/index.js"]

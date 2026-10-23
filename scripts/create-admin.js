@@ -3,6 +3,7 @@
 // The password is asked interactively so it never lands in shell history.
 const readline = require('readline');
 const users = require('../server/users');
+const db = require('../server/db');
 const { DEFAULT_TZ } = require('../server/config');
 
 function askHidden(question) {
@@ -35,6 +36,8 @@ function askHidden(question) {
     console.log(`Admin "${users.normalizeUsername(username)}" created (${user.public_id}).`);
   } catch (err) {
     console.error(`Could not create admin: ${err.code || err.message}`);
-    process.exit(1);
+    process.exitCode = 1;
+  } finally {
+    await db.close();
   }
 })();

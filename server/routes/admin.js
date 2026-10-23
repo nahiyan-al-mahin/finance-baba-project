@@ -9,29 +9,30 @@ const { AppError } = require('../errors');
 const router = express.Router();
 const DAY = 24 * 60 * 60 * 1000;
 
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
   const now = Date.now();
-  const one = (sql, ...args) => db.prepare(sql).get(...args).n;
-  res.json({
-    totalUsers: one("SELECT COUNT(*) n FROM users WHERE role = 'user'"),
-    activeLast7Days: one("SELECT COUNT(*) n FROM users WHERE role = 'user' AND last_active_at > ?", now - 7 * DAY),
-    newLast30Days: one("SELECT COUNT(*) n FROM users WHERE role = 'user' AND created_at > ?", now - 30 * DAY),
-    lockedNow: one("SELECT COUNT(*) n FROM users WHERE role = 'user' AND locked_until > ?", now),
-    openWarnings: one('SELECT COUNT(*) n FROM warnings WHERE acknowledged_at IS NULL'),
-  });
+  const s = await db.one(
+    `SELECT
+       (SELECT COUNT(*) FROM users WHERE role = 'user') AS total,
+       (SELECT COUNT(*) FROM users WHERE role = 'user' AND last_active_at > $1) AS active,
+       (SELECT COUNT(*) FROM users WHERE role = 'user' AND created_at > $2) AS fresh,
+       (SELECT COUNT(*) FROM users WHERE role = 'user' AND locked_until > $3) AS locked,
+       (SELECT COUNT(*) FROM warnings WHERE acknowledged_at IS NULL) AS open_warnings`,
+    [now - 7 * DAY, now - 30 * DAY, now]
+  );
+  res.json({ totalUsers: s.total, activeLast7Days: s.active, newLast30Days: s.fresh, lockedNow: s.locked, openWarnings: s.open_warnings });
 });
 
-router.get('/users', (req, res) => {
+router.get('/users', async (req, res) => {
   const now = Date.now();
-  const rows = db
-    .prepare(
-      `SELECT u.public_id, u.created_at, u.last_active_at, u.total_failed_logins, u.past_edits, u.locked_until,
+  const rows = await db.all(
+    `SELECT u.public_id, u.created_at, u.last_active_at, u.total_failed_logins, u.past_edits, u.locked_until,
          (SELECT COUNT(*) FROM entries e WHERE e.user_id = u.id) AS entry_count,
-         (SELECT COUNT(*) FROM entries e WHERE e.user_id = u.id AND e.created_at > ?) AS entries_24h,
+         (SELECT COUNT(*) FROM entries e WHERE e.user_id = u.id AND e.created_at > $1) AS entries_24h,
          (SELECT COUNT(*) FROM warnings w WHERE w.user_id = u.id) AS warning_count
-       FROM users u WHERE u.role = 'user' ORDER BY u.created_at DESC`
-    )
-    .all(now - DAY);
+       FROM users u WHERE u.role = 'user' ORDER BY u.created_at DESC`,
+    [now - DAY]
+  );
   res.json({
     users: rows.map((r) => {
       const flags = [];
@@ -54,26 +55,24 @@ router.get('/users', (req, res) => {
   });
 });
 
-router.post('/users/:publicId/warnings', (req, res) => {
-  const user = db.prepare("SELECT id FROM users WHERE public_id = ? AND role = 'user'").get(req.params.publicId);
+router.post('/users/:publicId/warnings', async (req, res) => {
+  const user = await db.one("SELECT id FROM users WHERE public_id = $1 AND role = 'user'", [req.params.publicId]);
   if (!user) throw new AppError(404, 'NOT_FOUND');
   const message = String(req.body?.message || '').trim();
   if (message.length < 5 || message.length > 500) throw new AppError(400, 'INVALID_MESSAGE');
-  db.prepare('INSERT INTO warnings (user_id, message_enc, created_at) VALUES (?, ?, ?)').run(
+  await db.run('INSERT INTO warnings (user_id, message_enc, created_at) VALUES ($1, $2, $3)', [
     user.id,
     c.serverEncrypt(message, `warning:${user.id}`),
-    Date.now()
-  );
+    Date.now(),
+  ]);
   res.status(201).json({ ok: true });
 });
 
-router.get('/warnings', (req, res) => {
-  const rows = db
-    .prepare(
-      `SELECT w.id, w.user_id, w.message_enc, w.created_at, w.acknowledged_at, u.public_id
-       FROM warnings w JOIN users u ON u.id = w.user_id ORDER BY w.created_at DESC LIMIT 200`
-    )
-    .all();
+router.get('/warnings', async (req, res) => {
+  const rows = await db.all(
+    `SELECT w.id, w.user_id, w.message_enc, w.created_at, w.acknowledged_at, u.public_id
+     FROM warnings w JOIN users u ON u.id = w.user_id ORDER BY w.created_at DESC LIMIT 200`
+  );
   res.json({
     warnings: rows.map((w) => ({
       id: w.id,

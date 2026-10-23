@@ -22,7 +22,7 @@ The parts you already know: **HTML, CSS and vanilla JavaScript** in the browser,
 | Added | Why |
 | --- | --- |
 | **Express 5** | The standard, minimal Node web framework for routes and middleware. |
-| **SQLite** (`better-sqlite3`) | A single-file database with no separate server to install. You can move to PostgreSQL later when traffic grows. |
+| **PostgreSQL** (`pg`, hosted on **Neon**) | The database. Locally, without `DATABASE_URL`, the same SQL runs on **PGlite** (Postgres inside Node), so there is nothing to install. |
 | Node's built-in **`crypto`** | scrypt password hashing and AES-256-GCM encryption, with no extra crypto dependencies. |
 | **Chart.js** | Charts on the reports page, served locally rather than from a CDN. |
 | **google-auth-library** | Verifies "Continue with Google" sign-ins on the server (Google's official library). |
@@ -40,10 +40,10 @@ Even a full copy of the database is useless to an attacker:
 3. Passwords are never stored. Only a derived verifier is kept.
 4. Usernames are stored as a keyed hash (HMAC), so they cannot be read either.
 5. **Google sign-in.** A Google login carries no password to derive a key from. So an account linked to Google keeps one more wrapped copy of its data key, encrypted with a key that comes from the server secret. A stolen database alone still reveals nothing. Someone who steals the database **and** the server secret could, however, read Google-linked accounts, while password-only accounts stay protected by their passwords. Users who want the strictest protection can leave Google disconnected (Settings → Google account).
-6. The unwrapped data key lives **only in server memory** while the user is logged in. Sessions end after 30 minutes idle or 12 hours. Restarting the server logs everyone out.
+6. While a user is logged in, their data key is kept in the `sessions` table **encrypted with a key derived from the random token in their cookie**. The database only stores a hash of that token, so it cannot unlock the key on its own. Sessions end after 30 minutes idle or 12 hours.
 7. Cookies are `HttpOnly` and `SameSite=Strict`, with a CSRF header check, a strict Content-Security-Policy and account lockout after 5 wrong passwords.
 
-> ⚠️ **Back up `data/secret.key`** (or set `APP_SECRET`). Without it, nothing in the database can be decrypted. Users who lose both their password and their recovery code cannot get their data back. That is by design.
+> ⚠️ **Keep `APP_SECRET` safe** (or `data/secret.key` when running locally without it). Without it, nothing in the database can be decrypted. Users who lose both their password and their recovery code cannot get their data back. That is by design.
 
 ## Getting started
 
@@ -54,7 +54,7 @@ npm start                     # http://localhost:3000
 npm run dev                   # same, but restarts on file changes
 ```
 
-Create an admin account (the password is asked for interactively):
+Create an admin account, either by setting `ADMIN_USERNAME` and `ADMIN_PASSWORD` in `.env` (created on the next start), or with the command below while the server is **stopped** (it asks for the password):
 
 ```bash
 npm run create-admin -- admin "Site Admin"
@@ -65,8 +65,8 @@ Admins log in on the normal login page and are sent to `/admin`.
 ### Enabling "Continue with Google"
 
 1. Open the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) and go to **Create credentials → OAuth client ID → Web application**.
-2. Under **Authorized JavaScript origins**, add your site, e.g. `http://localhost:3000` and `https://your-domain.com`.
-3. Put the client ID in `.env` as `GOOGLE_CLIENT_ID=...apps.googleusercontent.com` and restart.
+2. Under **Authorized JavaScript origins**, add your sites, e.g. `http://localhost:3000` and `https://your-app.vercel.app`.
+3. Put the client ID in `.env` (and in Vercel's environment variables) as `GOOGLE_CLIENT_ID=...apps.googleusercontent.com` and restart / redeploy.
 
 The Google button appears only when `GOOGLE_CLIENT_ID` is set. First-time Google users still choose a username and password: the password protects past days and works as a fallback login. Existing users can connect or disconnect Google under **Settings**.
 
@@ -82,13 +82,16 @@ To test on your phone, run the server and open `http://<your-computer-ip>:3000` 
 
 ```
 server/
-  index.js            Express app: security headers, routes, static files
   config.js           Settings and server secret
   crypto.js           Key derivation, AES-GCM, recovery codes
-  db.js               SQLite schema
+  app.js              Express app (shared by local server and Vercel)
+  index.js            Local entry point (`npm start`)
+  db.js               Postgres schema and queries (Neon via pg, or local PGlite)
+  bootstrap.js        Creates the admin from ADMIN_USERNAME/ADMIN_PASSWORD
+  rateLimitStore.js   Rate limits stored in Postgres
   users.js            Sign-up, login, lockout, password change, recovery, Google linking
   google.js           Google ID-token verification
-  sessions.js         In-memory sessions (holds the decrypted data key)
+  sessions.js         Database sessions (data key encrypted with the cookie token)
   entries.js          Encrypted entry storage and validation
   dates.js            Date helpers in the user's time zone
   routes/             auth, entries (+ warnings), reports, admin
@@ -101,57 +104,39 @@ scripts/create-admin.js
 test/api.test.js
 ```
 
-## Deploying
+## Deploying (Vercel + Neon, free)
 
-The app is **one Node.js process plus one SQLite file**, so it needs a host that:
+The app runs as a Vercel serverless function (`api/index.js` → `server/app.js`) and stores everything in **Neon Postgres**. Pages, CSS and JS are served from Vercel's CDN (`public/`). Every push to GitHub redeploys automatically.
 
-1. runs a long-lived Node 22+ server (not "serverless" functions), and
-2. gives you a **persistent disk/volume** for the `data/` folder (otherwise every redeploy wipes all accounts).
-
-Good fits: **Railway** (easiest), **Render** (paid plan with a disk), **Fly.io**, or any small VPS.
-
-### Environment variables (all hosts)
-
-| Variable | Value |
+| Variable (Vercel → Settings → Environment Variables) | Value |
 | --- | --- |
-| `NODE_ENV` | `production` (secure cookies, HTTPS-only headers) |
-| `TRUST_PROXY` | `1` (the host puts a proxy in front of the app) |
-| `APP_SECRET` | 64 hex chars: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. **Save a copy somewhere safe** — without it the data can never be decrypted. |
-| `DATA_DIR` | the mount path of your persistent volume, e.g. `/data` |
-| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | optional: creates the first admin at start-up. Remove `ADMIN_PASSWORD` once the log says the admin was created. |
-| `GOOGLE_CLIENT_ID` | optional, only when you enable Google sign-in |
+| `DATABASE_URL` | Neon **pooled** connection string |
+| `APP_SECRET` | 64 hex chars, `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. **Keep a copy safe**: without it the data can never be decrypted. |
+| `NODE_ENV` | `production` |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | optional: creates the first admin on the first request. Remove `ADMIN_PASSWORD` afterwards. |
+| `GOOGLE_CLIENT_ID` | optional: enables Continue with Google |
 
-Health check path: `/api/health`.
+Steps:
 
-### Railway (recommended)
+1. **Neon** → New project (region: Singapore) → *Connect* → copy the **pooled** connection string.
+2. **Vercel** → Add New → Project → import `finance-baba-project` (choose the branch under *Git* settings if it is not `main`). Framework preset: **Other**. Build/output settings come from `vercel.json`.
+3. Add the variables above, then **Deploy**.
+4. Open the site, log in with the admin account, then delete `ADMIN_PASSWORD` in Vercel and redeploy.
 
-1. Merge the work into your `main` branch (or pick the branch in step 3).
-2. On [railway.com](https://railway.com) → **New Project → Deploy from GitHub repo** → choose `finance-baba-project`.
-3. In the service → **Settings**: Source branch = the branch you want; Start command = `npm start` (detected automatically). Railway also understands the included `Dockerfile`.
-4. **Add a Volume** (right-click the service → *Attach volume*) with mount path `/data`.
-5. **Variables**: add the table above (`DATA_DIR=/data`).
-6. **Settings → Networking → Generate Domain**. Open the URL — you get HTTPS automatically.
+Health check: `/api/health`.
 
-### Render
+### Running against Neon from your PC
 
-New **Web Service** from the repo → Runtime *Node*, Build `npm ci`, Start `npm start` → add a **Disk** mounted at `/data` (needs a paid instance; the free tier has no disk and would lose data) → add the variables above.
+Put the same `DATABASE_URL` and **the same `APP_SECRET`** in your local `.env` and run `npm start`. Your PC and the live site then share one database. Leave `DATABASE_URL` empty to use a private local database instead.
 
-### Your own server (VPS)
+### Other hosts
 
-```bash
-git clone https://github.com/nahiyan-al-mahin/finance-baba-project.git && cd finance-baba-project
-npm ci --omit=dev
-cp .env.example .env   # fill in NODE_ENV=production, TRUST_PROXY=1, APP_SECRET, DATA_DIR
-npx pm2 start server/index.js --name finance-baba && npx pm2 save
-```
+Anything that runs `npm start` works too (Render, a VPS, Docker via the included `Dockerfile`): set `DATABASE_URL`, `APP_SECRET`, `NODE_ENV=production` and `TRUST_PROXY=1`.
 
-Put [Caddy](https://caddyserver.com) in front for automatic HTTPS (`your-domain.com { reverse_proxy localhost:3000 }`).
+### Notes
 
-### After deploying
-
-- Back up the volume (`finance-baba.db`) regularly, and keep `APP_SECRET` stored separately from those backups.
-- Run one instance only: sessions live in memory, and a restart logs everyone out (by design).
-- Adding Google later: add your live URL (e.g. `https://your-app.up.railway.app`) to *Authorized JavaScript origins* in Google Cloud, then set `GOOGLE_CLIENT_ID` and redeploy.
+- Sessions are stored in the database, encrypted with a key that only exists in the user's cookie, so a stolen database still can't be decrypted and deploys don't log anyone out.
+- Back up the database from Neon's dashboard now and then, and keep `APP_SECRET` stored separately from those backups.
 
 ## Going to production
 

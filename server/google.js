@@ -4,7 +4,9 @@
 const { OAuth2Client } = require('google-auth-library');
 const { GOOGLE_CLIENT_ID } = require('./config');
 const { AppError } = require('./errors');
-const { randomToken } = require('./crypto');
+const crypto = require('crypto');
+const db = require('./db');
+const { randomToken, serverEncrypt, serverDecrypt } = require('./crypto');
 
 const client = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
@@ -27,27 +29,30 @@ const google = {
 };
 
 // A brand-new Google user still has to pick a username and password (the password protects
-// past days and is the fallback login). Between the two steps we remember the verified identity.
-const pending = new Map();
+// past days and is the fallback login). Between the two steps we remember the verified identity
+// in the database (encrypted), keyed by a hash of a one-time token held by the browser.
 const PENDING_MS = 15 * 60 * 1000;
+const tokenHash = (token) => crypto.createHash('sha256').update(String(token || '')).digest('hex');
 
-function rememberPending(identity) {
+async function rememberPending(identity) {
   const token = randomToken(24);
-  pending.set(token, { ...identity, expires: Date.now() + PENDING_MS });
+  const hash = tokenHash(token);
+  await db.run('DELETE FROM google_pending WHERE expires_at < $1', [Date.now()]);
+  await db.run('INSERT INTO google_pending (token_hash, data_enc, expires_at) VALUES ($1, $2, $3)', [
+    hash,
+    serverEncrypt(JSON.stringify(identity), `google-pending:${hash}`),
+    Date.now() + PENDING_MS,
+  ]);
   return token;
 }
 
-function getPending(token) {
-  const p = pending.get(String(token || ''));
-  if (!p || p.expires < Date.now()) throw new AppError(401, 'GOOGLE_EXPIRED');
-  return p;
+async function getPending(token) {
+  const hash = tokenHash(token);
+  const row = await db.one('SELECT * FROM google_pending WHERE token_hash = $1', [hash]);
+  if (!row || row.expires_at < Date.now()) throw new AppError(401, 'GOOGLE_EXPIRED');
+  return JSON.parse(serverDecrypt(row.data_enc, `google-pending:${hash}`));
 }
 
-const dropPending = (token) => pending.delete(String(token || ''));
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [k, p] of pending) if (p.expires < now) pending.delete(k);
-}, 60 * 1000).unref();
+const dropPending = (token) => db.run('DELETE FROM google_pending WHERE token_hash = $1', [tokenHash(token)]);
 
 module.exports = { google, rememberPending, getPending, dropPending };

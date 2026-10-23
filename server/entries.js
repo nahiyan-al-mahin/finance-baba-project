@@ -26,40 +26,46 @@ function validate(body, today) {
   return { date, data: { type, amount, category, note } };
 }
 
-function listByRange(userId, dek, start, end) {
-  return db
-    .prepare('SELECT * FROM entries WHERE user_id = ? AND entry_date BETWEEN ? AND ? ORDER BY entry_date, created_at, id')
-    .all(userId, start, end)
-    .map((row) => decryptRow(row, dek));
+async function listByRange(userId, dek, start, end) {
+  const rows = await db.all(
+    'SELECT * FROM entries WHERE user_id = $1 AND entry_date BETWEEN $2 AND $3 ORDER BY entry_date, created_at, id',
+    [userId, start, end]
+  );
+  return rows.map((row) => decryptRow(row, dek));
 }
 
-function getRow(userId, id) {
-  const row = db.prepare('SELECT * FROM entries WHERE id = ? AND user_id = ?').get(Number(id), userId);
+function entryId(id) {
+  const n = Number(id);
+  if (!Number.isSafeInteger(n) || n <= 0 || n > 2147483647) throw new AppError(404, 'NOT_FOUND');
+  return n;
+}
+
+async function getRow(userId, id) {
+  const row = await db.one('SELECT * FROM entries WHERE id = $1 AND user_id = $2', [entryId(id), userId]);
   if (!row) throw new AppError(404, 'NOT_FOUND');
   return row;
 }
 
-function create(userId, dek, { date, data }) {
+async function create(userId, dek, { date, data }) {
   const now = Date.now();
-  const info = db
-    .prepare('INSERT INTO entries (user_id, entry_date, data_enc, created_at, updated_at) VALUES (?, ?, ?, ?, ?)')
-    .run(userId, date, c.encryptJSON(dek, data, aad(userId)), now, now);
-  return decryptRow(getRow(userId, info.lastInsertRowid), dek);
+  const row = await db.one(
+    'INSERT INTO entries (user_id, entry_date, data_enc, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+    [userId, date, c.encryptJSON(dek, data, aad(userId)), now, now]
+  );
+  return decryptRow(row, dek);
 }
 
-function update(userId, dek, id, { date, data }) {
-  db.prepare('UPDATE entries SET entry_date = ?, data_enc = ?, updated_at = ? WHERE id = ? AND user_id = ?').run(
-    date,
-    c.encryptJSON(dek, data, aad(userId)),
-    Date.now(),
-    Number(id),
-    userId
+async function update(userId, dek, id, { date, data }) {
+  const row = await db.one(
+    'UPDATE entries SET entry_date = $1, data_enc = $2, updated_at = $3 WHERE id = $4 AND user_id = $5 RETURNING *',
+    [date, c.encryptJSON(dek, data, aad(userId)), Date.now(), entryId(id), userId]
   );
-  return decryptRow(getRow(userId, id), dek);
+  if (!row) throw new AppError(404, 'NOT_FOUND');
+  return decryptRow(row, dek);
 }
 
 function remove(userId, id) {
-  db.prepare('DELETE FROM entries WHERE id = ? AND user_id = ?').run(Number(id), userId);
+  return db.run('DELETE FROM entries WHERE id = $1 AND user_id = $2', [entryId(id), userId]);
 }
 
 function totals(list) {

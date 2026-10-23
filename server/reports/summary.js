@@ -34,11 +34,11 @@ function elapsedDays(range, today) {
   return eachDay(range.start, end).length;
 }
 
-function summarize({ userId, dek, today }, period, anchor) {
+async function summarize({ userId, dek, today }, period, anchor) {
   const range = periodRange(period, anchor);
-  const list = entries.listByRange(userId, dek, range.start, range.end);
+  const list = await entries.listByRange(userId, dek, range.start, range.end);
   const prevRange = periodRange(period, previousAnchor(period, anchor));
-  const prevTotals = entries.totals(entries.listByRange(userId, dek, prevRange.start, prevRange.end));
+  const prevTotals = entries.totals(await entries.listByRange(userId, dek, prevRange.start, prevRange.end));
   const totals = entries.totals(list);
   const days = elapsedDays(range, today);
   const expenses = list.filter((e) => e.type === 'expense');

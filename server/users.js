@@ -31,15 +31,15 @@ function validateDisplayName(name) {
   return n;
 }
 
-function newPublicId() {
+async function newPublicId() {
   for (;;) {
     const id = `FB-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
-    if (!db.prepare('SELECT 1 FROM users WHERE public_id = ?').get(id)) return id;
+    if (!(await db.one('SELECT 1 FROM users WHERE public_id = $1', [id]))) return id;
   }
 }
 
-const findById = (id) => db.prepare('SELECT * FROM users WHERE id = ?').get(id);
-const findByUsername = (u) => db.prepare('SELECT * FROM users WHERE username_idx = ?').get(usernameIndex(u));
+const findById = (id) => db.one('SELECT * FROM users WHERE id = $1', [id]);
+const findByUsername = (u) => db.one('SELECT * FROM users WHERE username_idx = $1', [usernameIndex(u)]);
 
 async function wrapForPassword(row, dek, password) {
   const salt = c.newSalt();
@@ -58,20 +58,18 @@ async function createUser({ username, displayName, password, timezone, role = 'u
   validateUsername(username);
   validatePassword(password);
   const name = validateDisplayName(displayName);
-  if (findByUsername(username)) throw new AppError(409, 'USERNAME_TAKEN');
+  if (await findByUsername(username)) throw new AppError(409, 'USERNAME_TAKEN');
 
-  const row = { public_id: newPublicId() };
+  const row = { public_id: await newPublicId() };
   const dek = c.newKey();
   const pw = await wrapForPassword(row, dek, password);
   const rec = await wrapForRecovery(row, dek);
   try {
-    const info = db
-      .prepare(
-        `INSERT INTO users (public_id, username_idx, role, auth_salt, auth_hash, wrapped_dek, recovery_salt,
-           recovery_wrapped_dek, profile_enc, timezone, created_at, last_active_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run(
+    const user = await db.one(
+      `INSERT INTO users (public_id, username_idx, role, auth_salt, auth_hash, wrapped_dek, recovery_salt,
+         recovery_wrapped_dek, profile_enc, timezone, created_at, last_active_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+      [
         row.public_id,
         usernameIndex(username),
         role,
@@ -83,11 +81,12 @@ async function createUser({ username, displayName, password, timezone, role = 'u
         c.encryptJSON(dek, { displayName: name }, profileAad(row)),
         timezone,
         Date.now(),
-        Date.now()
-      );
-    return { user: findById(info.lastInsertRowid), dek, recoveryCode: rec.code };
+        Date.now(),
+      ]
+    );
+    return { user, dek, recoveryCode: rec.code };
   } catch (err) {
-    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') throw new AppError(409, 'USERNAME_TAKEN');
+    if (db.isUniqueViolation(err)) throw new AppError(409, 'USERNAME_TAKEN');
     throw err;
   }
 }
@@ -98,16 +97,16 @@ function assertNotLocked(row) {
   }
 }
 
+/** Counts a wrong password; the 5th one in a row locks the account for a while. Atomic, so parallel guesses can't skip it. */
 function recordFailure(row) {
-  const failed = row.failed_logins + 1;
-  if (failed >= MAX_FAILED_LOGINS) {
-    db.prepare('UPDATE users SET failed_logins = 0, total_failed_logins = total_failed_logins + 1, locked_until = ? WHERE id = ?').run(
-      Date.now() + LOCK_MS,
-      row.id
-    );
-  } else {
-    db.prepare('UPDATE users SET failed_logins = ?, total_failed_logins = total_failed_logins + 1 WHERE id = ?').run(failed, row.id);
-  }
+  return db.run(
+    `UPDATE users SET
+       total_failed_logins = total_failed_logins + 1,
+       locked_until  = CASE WHEN failed_logins + 1 >= $2 THEN $3 ELSE locked_until END,
+       failed_logins = CASE WHEN failed_logins + 1 >= $2 THEN 0 ELSE failed_logins + 1 END
+     WHERE id = $1`,
+    [row.id, MAX_FAILED_LOGINS, Date.now() + LOCK_MS]
+  );
 }
 
 /** Checks the password and returns the unwrapped DEK. Counts failures towards the lockout. */
@@ -115,35 +114,35 @@ async function unlockWithPassword(row, password) {
   assertNotLocked(row);
   const { authHash, kek } = await c.deriveKeys(String(password || ''), c.unb64(row.auth_salt), 'password');
   if (!c.safeEqual(authHash, c.unb64(row.auth_hash))) {
-    recordFailure(row);
+    await recordFailure(row);
     throw new AppError(401, 'INVALID_CREDENTIALS');
   }
-  db.prepare('UPDATE users SET failed_logins = 0, locked_until = NULL WHERE id = ?').run(row.id);
+  await db.run('UPDATE users SET failed_logins = 0, locked_until = NULL WHERE id = $1', [row.id]);
   return c.decrypt(kek, row.wrapped_dek, dekAad(row));
 }
 
 async function login(username, password) {
-  const row = findByUsername(username);
+  const row = await findByUsername(username);
   if (!row) {
     await c.deriveKeys(String(password || ''), DUMMY_SALT, 'password'); // same timing as a real check
     throw new AppError(401, 'INVALID_CREDENTIALS');
   }
   const dek = await unlockWithPassword(row, password);
-  db.prepare('UPDATE users SET last_active_at = ? WHERE id = ?').run(Date.now(), row.id);
-  return { user: findById(row.id), dek };
+  await db.run('UPDATE users SET last_active_at = $1 WHERE id = $2', [Date.now(), row.id]);
+  return { user: await findById(row.id), dek };
 }
 
 async function changePassword(row, currentPassword, newPassword) {
   validatePassword(newPassword);
   const dek = await unlockWithPassword(row, currentPassword);
   const pw = await wrapForPassword(row, dek, newPassword);
-  db.prepare('UPDATE users SET auth_salt = ?, auth_hash = ?, wrapped_dek = ? WHERE id = ?').run(pw.auth_salt, pw.auth_hash, pw.wrapped_dek, row.id);
+  await db.run('UPDATE users SET auth_salt = $1, auth_hash = $2, wrapped_dek = $3 WHERE id = $4', [pw.auth_salt, pw.auth_hash, pw.wrapped_dek, row.id]);
 }
 
 /** Forgot password: the recovery code unwraps the DEK, so no data is lost. Issues a fresh code. */
 async function recover(username, recoveryCode, newPassword) {
   validatePassword(newPassword);
-  const row = findByUsername(username);
+  const row = await findByUsername(username);
   if (!row) {
     await c.deriveKeys('x', DUMMY_SALT, 'recovery');
     throw new AppError(401, 'INVALID_RECOVERY');
@@ -154,41 +153,47 @@ async function recover(username, recoveryCode, newPassword) {
   try {
     dek = c.decrypt(kek, row.recovery_wrapped_dek, recoveryAad(row));
   } catch {
-    recordFailure(row);
+    await recordFailure(row);
     throw new AppError(401, 'INVALID_RECOVERY');
   }
   const pw = await wrapForPassword(row, dek, newPassword);
   const rec = await wrapForRecovery(row, dek);
-  db.prepare(
-    `UPDATE users SET auth_salt = ?, auth_hash = ?, wrapped_dek = ?, recovery_salt = ?, recovery_wrapped_dek = ?,
-       failed_logins = 0, locked_until = NULL, last_active_at = ? WHERE id = ?`
-  ).run(pw.auth_salt, pw.auth_hash, pw.wrapped_dek, rec.recovery_salt, rec.recovery_wrapped_dek, Date.now(), row.id);
-  return { user: findById(row.id), dek, recoveryCode: rec.code };
+  await db.run(
+    `UPDATE users SET auth_salt = $1, auth_hash = $2, wrapped_dek = $3, recovery_salt = $4, recovery_wrapped_dek = $5,
+       failed_logins = 0, locked_until = NULL, last_active_at = $6 WHERE id = $7`,
+    [pw.auth_salt, pw.auth_hash, pw.wrapped_dek, rec.recovery_salt, rec.recovery_wrapped_dek, Date.now(), row.id]
+  );
+  return { user: await findById(row.id), dek, recoveryCode: rec.code };
 }
 
 // ---- Google sign-in
-const findByGoogle = (sub) => db.prepare('SELECT * FROM users WHERE google_idx = ?').get(googleIndex(sub));
+const findByGoogle = (sub) => db.one('SELECT * FROM users WHERE google_idx = $1', [googleIndex(sub)]);
 
-function linkGoogle(row, dek, { sub, email }) {
-  const other = findByGoogle(sub);
+async function linkGoogle(row, dek, { sub, email }) {
+  const other = await findByGoogle(sub);
   if (other && other.id !== row.id) throw new AppError(409, 'GOOGLE_IN_USE');
-  db.prepare('UPDATE users SET google_idx = ?, google_wrapped_dek = ? WHERE id = ?').run(googleIndex(sub), c.wrapForGoogle(dek, googleAad(row)), row.id);
-  updateProfile(row, dek, { ...getProfile(row, dek), googleEmail: email });
+  try {
+    await db.run('UPDATE users SET google_idx = $1, google_wrapped_dek = $2 WHERE id = $3', [googleIndex(sub), c.wrapForGoogle(dek, googleAad(row)), row.id]);
+  } catch (err) {
+    if (db.isUniqueViolation(err)) throw new AppError(409, 'GOOGLE_IN_USE');
+    throw err;
+  }
+  await updateProfile(row, dek, { ...getProfile(row, dek), googleEmail: email });
 }
 
 async function unlinkGoogle(row, password) {
   const dek = await unlockWithPassword(row, password);
-  db.prepare('UPDATE users SET google_idx = NULL, google_wrapped_dek = NULL WHERE id = ?').run(row.id);
+  await db.run('UPDATE users SET google_idx = NULL, google_wrapped_dek = NULL WHERE id = $1', [row.id]);
   const { googleEmail, ...profile } = getProfile(row, dek);
-  updateProfile(row, dek, profile);
+  await updateProfile(row, dek, profile);
 }
 
-function loginWithGoogle(sub) {
-  const row = findByGoogle(sub);
+async function loginWithGoogle(sub) {
+  const row = await findByGoogle(sub);
   if (!row) return null;
   const dek = c.unwrapForGoogle(row.google_wrapped_dek, googleAad(row));
-  db.prepare('UPDATE users SET last_active_at = ? WHERE id = ?').run(Date.now(), row.id);
-  return { user: findById(row.id), dek };
+  await db.run('UPDATE users SET last_active_at = $1 WHERE id = $2', [Date.now(), row.id]);
+  return { user: await findById(row.id), dek };
 }
 
 function getProfile(row, dek) {
@@ -196,7 +201,7 @@ function getProfile(row, dek) {
 }
 
 function updateProfile(row, dek, profile) {
-  db.prepare('UPDATE users SET profile_enc = ? WHERE id = ?').run(c.encryptJSON(dek, profile, profileAad(row)), row.id);
+  return db.run('UPDATE users SET profile_enc = $1 WHERE id = $2', [c.encryptJSON(dek, profile, profileAad(row)), row.id]);
 }
 
 function toPublic(row, dek) {
