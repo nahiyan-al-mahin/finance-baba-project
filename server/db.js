@@ -50,4 +50,14 @@ CREATE TABLE IF NOT EXISTS warnings (
 CREATE INDEX IF NOT EXISTS idx_warnings_user ON warnings(user_id);
 `);
 
+// ---- Migrations for databases created by older versions
+const userColumns = db.prepare('PRAGMA table_info(users)').all().map((c) => c.name);
+if (!userColumns.includes('google_idx')) {
+  db.exec(`
+    ALTER TABLE users ADD COLUMN google_idx TEXT;
+    ALTER TABLE users ADD COLUMN google_wrapped_dek TEXT;
+  `);
+}
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google ON users(google_idx)');
+
 module.exports = db;

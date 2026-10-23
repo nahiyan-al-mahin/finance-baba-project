@@ -10,6 +10,9 @@
  * - A second copy of the DEK is wrapped with a key derived from a one-time
  *   recovery code, so a forgotten password does not mean lost data.
  * - The password itself is never stored; only an HKDF-derived verifier.
+ * - Accounts linked to Google keep a third copy wrapped with a server-held key, because a
+ *   Google sign-in carries no password to derive a key from. A stolen database alone still
+ *   reveals nothing; the attacker would also need the server secret.
  * - The unwrapped DEK lives only in server memory for the session's lifetime.
  */
 const crypto = require('crypto');
@@ -17,6 +20,7 @@ const { SECRET } = require('./config');
 
 const SCRYPT_OPTS = { N: 1 << 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
 const SERVER_DATA_KEY = Buffer.from(crypto.hkdfSync('sha256', SECRET, Buffer.alloc(0), 'finance-baba:server-data', 32));
+const GOOGLE_WRAP_KEY = Buffer.from(crypto.hkdfSync('sha256', SECRET, Buffer.alloc(0), 'finance-baba:google-wrap', 32));
 
 const b64 = (buf) => buf.toString('base64');
 const unb64 = (str) => Buffer.from(str, 'base64');
@@ -61,6 +65,10 @@ const decryptJSON = (key, payload, aad) => JSON.parse(decrypt(key, payload, aad)
 const serverEncrypt = (text, aad) => encrypt(SERVER_DATA_KEY, Buffer.from(text), aad);
 const serverDecrypt = (payload, aad) => decrypt(SERVER_DATA_KEY, payload, aad).toString('utf8');
 
+/** Wraps / unwraps a user's DEK for Google sign-in. */
+const wrapForGoogle = (dek, aad) => encrypt(GOOGLE_WRAP_KEY, dek, aad);
+const unwrapForGoogle = (payload, aad) => decrypt(GOOGLE_WRAP_KEY, payload, aad);
+
 /** Keyed hash so usernames can be looked up without being stored in plain text. */
 const blindIndex = (value) => crypto.createHmac('sha256', SECRET).update(value).digest('hex');
 
@@ -93,6 +101,8 @@ module.exports = {
   decryptJSON,
   serverEncrypt,
   serverDecrypt,
+  wrapForGoogle,
+  unwrapForGoogle,
   blindIndex,
   safeEqual,
   generateRecoveryCode,

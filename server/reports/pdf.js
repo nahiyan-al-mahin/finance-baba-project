@@ -8,7 +8,7 @@ const { parse } = require('../dates');
 // Noto Sans Bengali covers both Bangla and Latin, so one font serves both languages.
 const FONT = path.join(ROOT, 'public', 'fonts', 'NotoSansBengali.ttf');
 
-const COLORS = { brand: '#0f766e', brandLight: '#e6f4f2', text: '#1f2937', muted: '#6b7280', line: '#e5e7eb', income: '#15803d', expense: '#b91c1c', zebra: '#f9fafb' };
+const COLORS = { brand: '#0f766e', brandLight: '#f6eedd', text: '#2b2620', muted: '#776c5d', line: '#e8dcc6', income: '#2f7d32', expense: '#b91c1c', zebra: '#fcf7ec' };
 
 const LABELS = {
   en: {

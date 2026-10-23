@@ -1,12 +1,12 @@
 # Finance Baba (ফাইন্যান্স বাবা)
 
-A mobile-friendly personal finance diary. Users log what they spend and what they earn each day. The app shows the daily total, analyses each week, month and year, and exports full PDF statements. It works in **English and বাংলা**, with **light (default) and dark** themes.
+A mobile-friendly personal finance diary. Users log what they spend and what they earn each day. The app shows the daily total, analyses each week, month and year, and exports full PDF statements. It works in **English and বাংলা**, with a **light cream theme (default)** and a dark theme.
 
 ## Features
 
 | Area | What it does |
 | --- | --- |
-| Accounts | Sign up / log in with a username and password. A one-time **recovery code** resets a forgotten password without losing data. |
+| Accounts | Sign up / log in with a username and password, or **Continue with Google** (any Gmail account). A one-time **recovery code** resets a forgotten password without losing data. |
 | Daily log | Choose expense or income, write what it was for, then enter the amount and category. The day's total spending is always shown. |
 | Past days locked | Adding, editing or deleting entries on a day that has passed needs the password again. Editing then stays unlocked for 5 minutes. |
 | Analysis | Week (Saturday to Friday), month and year views with charts, category breakdown, comparison with the previous period, savings rate and insights. |
@@ -25,6 +25,7 @@ The parts you already know: **HTML, CSS and vanilla JavaScript** in the browser,
 | **SQLite** (`better-sqlite3`) | A single-file database with no separate server to install. You can move to PostgreSQL later when traffic grows. |
 | Node's built-in **`crypto`** | scrypt password hashing and AES-256-GCM encryption, with no extra crypto dependencies. |
 | **Chart.js** | Charts on the reports page, served locally rather than from a CDN. |
+| **google-auth-library** | Verifies "Continue with Google" sign-ins on the server (Google's official library). |
 | **PDFKit** | Generates PDFs on the server. The bundled Noto Sans Bengali font renders Bangla correctly. |
 | **helmet** and **express-rate-limit** | Security headers (a strict CSP) and brute-force protection. |
 
@@ -38,8 +39,9 @@ Even a full copy of the database is useless to an attacker:
 2. The data key is stored only in **wrapped** (encrypted) form. The wrapping key comes from the user's password: **scrypt**, then **HKDF** mixed with a server secret. A second wrapped copy uses the recovery code.
 3. Passwords are never stored. Only a derived verifier is kept.
 4. Usernames are stored as a keyed hash (HMAC), so they cannot be read either.
-5. The unwrapped data key lives **only in server memory** while the user is logged in. Sessions end after 30 minutes idle or 12 hours. Restarting the server logs everyone out.
-6. Cookies are `HttpOnly` and `SameSite=Strict`, with a CSRF header check, a strict Content-Security-Policy and account lockout after 5 wrong passwords.
+5. **Google sign-in.** A Google login carries no password to derive a key from. So an account linked to Google keeps one more wrapped copy of its data key, encrypted with a key that comes from the server secret. A stolen database alone still reveals nothing. Someone who steals the database **and** the server secret could, however, read Google-linked accounts, while password-only accounts stay protected by their passwords. Users who want the strictest protection can leave Google disconnected (Settings → Google account).
+6. The unwrapped data key lives **only in server memory** while the user is logged in. Sessions end after 30 minutes idle or 12 hours. Restarting the server logs everyone out.
+7. Cookies are `HttpOnly` and `SameSite=Strict`, with a CSRF header check, a strict Content-Security-Policy and account lockout after 5 wrong passwords.
 
 > ⚠️ **Back up `data/secret.key`** (or set `APP_SECRET`). Without it, nothing in the database can be decrypted. Users who lose both their password and their recovery code cannot get their data back. That is by design.
 
@@ -60,6 +62,14 @@ npm run create-admin -- admin "Site Admin"
 
 Admins log in on the normal login page and are sent to `/admin`.
 
+### Enabling "Continue with Google"
+
+1. Open the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) and go to **Create credentials → OAuth client ID → Web application**.
+2. Under **Authorized JavaScript origins**, add your site, e.g. `http://localhost:3000` and `https://your-domain.com`.
+3. Put the client ID in `.env` as `GOOGLE_CLIENT_ID=...apps.googleusercontent.com` and restart.
+
+The Google button appears only when `GOOGLE_CLIENT_ID` is set. First-time Google users still choose a username and password: the password protects past days and works as a fallback login. Existing users can connect or disconnect Google under **Settings**.
+
 Run the tests:
 
 ```bash
@@ -76,7 +86,8 @@ server/
   config.js           Settings and server secret
   crypto.js           Key derivation, AES-GCM, recovery codes
   db.js               SQLite schema
-  users.js            Sign-up, login, lockout, password change and recovery
+  users.js            Sign-up, login, lockout, password change, recovery, Google linking
+  google.js           Google ID-token verification
   sessions.js         In-memory sessions (holds the decrypted data key)
   entries.js          Encrypted entry storage and validation
   dates.js            Date helpers in the user's time zone

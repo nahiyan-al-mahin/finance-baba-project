@@ -13,6 +13,8 @@ const usernameIndex = (u) => c.blindIndex(`username:${normalizeUsername(u)}`);
 const dekAad = (row) => `dek:${row.public_id}`;
 const recoveryAad = (row) => `recovery:${row.public_id}`;
 const profileAad = (row) => `profile:${row.public_id}`;
+const googleAad = (row) => `google:${row.public_id}`;
+const googleIndex = (sub) => c.blindIndex(`google:${sub}`);
 
 function validateUsername(username) {
   if (!USERNAME_RE.test(normalizeUsername(username))) throw new AppError(400, 'INVALID_USERNAME');
@@ -164,6 +166,31 @@ async function recover(username, recoveryCode, newPassword) {
   return { user: findById(row.id), dek, recoveryCode: rec.code };
 }
 
+// ---- Google sign-in
+const findByGoogle = (sub) => db.prepare('SELECT * FROM users WHERE google_idx = ?').get(googleIndex(sub));
+
+function linkGoogle(row, dek, { sub, email }) {
+  const other = findByGoogle(sub);
+  if (other && other.id !== row.id) throw new AppError(409, 'GOOGLE_IN_USE');
+  db.prepare('UPDATE users SET google_idx = ?, google_wrapped_dek = ? WHERE id = ?').run(googleIndex(sub), c.wrapForGoogle(dek, googleAad(row)), row.id);
+  updateProfile(row, dek, { ...getProfile(row, dek), googleEmail: email });
+}
+
+async function unlinkGoogle(row, password) {
+  const dek = await unlockWithPassword(row, password);
+  db.prepare('UPDATE users SET google_idx = NULL, google_wrapped_dek = NULL WHERE id = ?').run(row.id);
+  const { googleEmail, ...profile } = getProfile(row, dek);
+  updateProfile(row, dek, profile);
+}
+
+function loginWithGoogle(sub) {
+  const row = findByGoogle(sub);
+  if (!row) return null;
+  const dek = c.unwrapForGoogle(row.google_wrapped_dek, googleAad(row));
+  db.prepare('UPDATE users SET last_active_at = ? WHERE id = ?').run(Date.now(), row.id);
+  return { user: findById(row.id), dek };
+}
+
 function getProfile(row, dek) {
   return c.decryptJSON(dek, row.profile_enc, profileAad(row));
 }
@@ -173,10 +200,12 @@ function updateProfile(row, dek, profile) {
 }
 
 function toPublic(row, dek) {
+  const profile = getProfile(row, dek);
   return {
     id: row.public_id,
     role: row.role,
-    displayName: getProfile(row, dek).displayName,
+    displayName: profile.displayName,
+    googleEmail: row.google_idx ? profile.googleEmail || '' : null,
     timezone: row.timezone,
     onboarded: !!row.onboarded,
     createdAt: row.created_at,
@@ -196,4 +225,8 @@ module.exports = {
   getProfile,
   updateProfile,
   toPublic,
+  linkGoogle,
+  unlinkGoogle,
+  loginWithGoogle,
+  findByGoogle,
 };

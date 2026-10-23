@@ -1,6 +1,7 @@
 import { get, post } from './api.js';
 import { t } from './i18n.js';
 import { $, $$, initChrome, showFormError, busy, toast, downloadText } from './ui.js';
+import { googleAvailable, renderGoogleButton } from './google.js';
 
 initChrome();
 
@@ -14,6 +15,7 @@ get('/auth/me')
 function show(panel) {
   $('#panel-main').hidden = panel !== 'main';
   $('#recover-form').hidden = panel !== 'recover';
+  $('#google-signup-form').hidden = panel !== 'google';
   $('#panel-recovery').hidden = panel !== 'recovery';
 }
 
@@ -79,6 +81,61 @@ $('#recover-form').addEventListener('submit', (e) => {
     try {
       showFormError(form, null);
       const { user, recoveryCode } = await post('/auth/recover', Object.fromEntries(new FormData(form)));
+      showRecovery(user, recoveryCode);
+    } catch (err) {
+      showFormError(form, err);
+    }
+  });
+});
+
+// ---- Continue with Google
+let googleSignupToken = null;
+
+async function onGoogleCredential(credential) {
+  const form = $('#login-form').hidden ? $('#signup-form') : $('#login-form');
+  try {
+    showFormError(form, null);
+    const res = await post('/auth/google', { credential });
+    if (!res.needsSignup) return goHome(res.user);
+    googleSignupToken = res.signupToken;
+    show('google');
+    const f = $('#google-signup-form').elements;
+    $('#google-email').textContent = res.email;
+    f.displayName.value = res.name;
+    f.username.value = res.username;
+    f.password.focus();
+  } catch (err) {
+    showFormError(form, err);
+  }
+}
+
+googleAvailable().then(async (ok) => {
+  if (!ok) return;
+  $('#google-area').hidden = false; // visible first so the button can size itself
+  $('#google-area').hidden = !(await renderGoogleButton($('#google-btn'), onGoogleCredential));
+});
+
+$('#google-cancel').addEventListener('click', (e) => {
+  e.preventDefault();
+  googleSignupToken = null;
+  show('main');
+});
+
+$('#google-signup-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const form = e.currentTarget;
+  const data = Object.fromEntries(new FormData(form));
+  if (data.password !== data.password2) return showFormError(form, t('auth.mismatch'));
+  busy(form, async () => {
+    try {
+      showFormError(form, null);
+      const { user, recoveryCode } = await post('/auth/google/signup', {
+        signupToken: googleSignupToken,
+        displayName: data.displayName,
+        username: data.username,
+        password: data.password,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      });
       showRecovery(user, recoveryCode);
     } catch (err) {
       showFormError(form, err);

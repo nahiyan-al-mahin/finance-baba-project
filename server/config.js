@@ -39,6 +39,7 @@ module.exports = {
   DB_PATH: process.env.DB_PATH || path.join(DATA_DIR, 'finance-baba.db'),
   SECRET: loadSecret(),
   TRUST_PROXY: process.env.TRUST_PROXY === '1',
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
   COOKIE_NAME: 'fb_sid',
   COOKIE_SECURE: isProd,
   SESSION_IDLE_MS: 30 * 60 * 1000, // logged out after 30 min of inactivity

@@ -3,6 +3,7 @@ import { t, fmt, setLang, getLang, onLangChange, applyI18n, categoryLabel, categ
 import { $, $$, initChrome, toast, errorMessage, showFormError, busy, openDialog, dialogAction, escapeHtml, setTheme, getTheme } from './ui.js';
 import { initReports, loadReports } from './reports.js';
 import { startOnboarding } from './onboarding.js';
+import { googleAvailable, renderGoogleButton } from './google.js';
 
 const state = { user: null, today: null, date: null, unlockedUntil: 0, view: 'daily', entries: [] };
 
@@ -237,6 +238,28 @@ function renderSettings() {
   $('#set-id').textContent = state.user.id;
   $$('#lang-toggle [data-lang]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === getLang())));
   $$('#theme-toggle [data-theme-choice]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.themeChoice === getTheme())));
+  renderGoogleCard();
+}
+
+async function renderGoogleCard() {
+  if (!(await googleAvailable())) return;
+  const linked = state.user.googleEmail !== null;
+  $('#google-card').hidden = false;
+  $('#google-status').textContent = linked ? t('set.googleLinked', { email: state.user.googleEmail }) : t('set.googleNotLinked');
+  $('#google-unlink').hidden = !linked;
+  $('#google-link-btn').hidden = linked;
+  if (!linked) {
+    const ok = await renderGoogleButton($('#google-link-btn'), async (credential) => {
+      try {
+        ({ user: state.user } = await post('/auth/google/link', { credential }));
+        toast(t('set.googleLinkedToast'));
+        renderGoogleCard();
+      } catch (err) {
+        handleError(err);
+      }
+    });
+    if (!ok) $('#google-card').hidden = true;
+  }
 }
 
 function initSettings() {
@@ -274,6 +297,14 @@ function initSettings() {
         showFormError(form, err);
       }
     });
+  });
+
+  $('#google-unlink').addEventListener('click', async () => {
+    const res = await dialogAction($('#unlink-dialog'), (data) => post('/auth/google/unlink', { password: data.get('password') }));
+    if (!res) return;
+    state.user = res.user;
+    toast(t('set.googleUnlinkedToast'));
+    renderGoogleCard();
   });
 
   $('#replay-tour').addEventListener('click', () => startOnboarding());

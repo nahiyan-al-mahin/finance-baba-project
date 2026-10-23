@@ -7,26 +7,26 @@
   unicode-range: U+0980-09FF, U+200C-200D, U+25CC;
 }
 
-/* ========== Theme tokens (light is the default) ========== */
+/* ========== Theme tokens (light cream is the default) ========== */
 :root {
   --brand: #0f766e;
   --brand-strong: #115e59;
-  --brand-soft: #e6f4f2;
-  --bg: #f6f8f7;
-  --surface: #ffffff;
-  --surface-2: #f1f5f4;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --border: #e3e8e6;
-  --income: #15803d;
-  --income-soft: #e8f6ec;
+  --brand-soft: #e2efe7;
+  --bg: #faf5ea; /* cream */
+  --surface: #fffdf7; /* ivory */
+  --surface-2: #f4ecdc; /* sand */
+  --text: #2b2620;
+  --muted: #776c5d;
+  --border: #e8dcc6;
+  --income: #2f7d32;
+  --income-soft: #ebf3df;
   --expense: #c2410c;
-  --expense-soft: #fdf0e8;
+  --expense-soft: #fbe8d7;
   --danger: #b91c1c;
-  --danger-soft: #fdecec;
-  --warning: #a16207;
-  --warning-soft: #fef6e0;
-  --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 4px 16px rgba(16, 24, 40, 0.06);
+  --danger-soft: #fbe5e0;
+  --warning: #9a6408;
+  --warning-soft: #fbefcf;
+  --shadow: 0 1px 2px rgba(74, 56, 28, 0.06), 0 4px 16px rgba(74, 56, 28, 0.07);
   --radius: 14px;
   --radius-sm: 10px;
   --nav-h: 64px;
@@ -779,6 +779,26 @@ dialog::backdrop {
   display: grid;
   grid-template-columns: 1fr 1fr;
   margin-bottom: 1rem;
+}
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.1rem 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.google-btn {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
 }
 .recovery-code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0f766e" />
+    <meta name="theme-color" content="#faf5ea" />
     <title>Finance Baba</title>
     <link rel="icon" href="/img/logo.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -191,6 +191,13 @@
           <button class="btn" type="submit" data-i18n="set.changePassword">Change password</button>
         </form>
 
+        <div class="card" id="google-card" hidden>
+          <h2 class="card-title" data-i18n="set.google">Google account</h2>
+          <p class="small" id="google-status"></p>
+          <div id="google-link-btn" class="google-btn" hidden></div>
+          <button class="btn btn-danger" id="google-unlink" type="button" data-i18n="set.googleUnlink" hidden></button>
+        </div>
+
         <div class="card">
           <h2 class="card-title" data-i18n="set.help">Help</h2>
           <div class="grid">
@@ -282,6 +289,21 @@
         <div class="dialog-actions">
           <button class="btn" type="button" data-action="cancel" data-i18n="daily.cancel"></button>
           <button class="btn btn-danger" type="submit" data-i18n="daily.delete"></button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="unlink-dialog">
+      <form novalidate>
+        <h2 data-i18n="set.googleUnlink"></h2>
+        <p class="small" data-i18n="set.googleUnlinkConfirm"></p>
+        <div class="field">
+          <label for="gu-password" data-i18n="auth.password"></label>
+          <input class="input" id="gu-password" name="password" type="password" autocomplete="current-password" required />
+        </div>
+        <div class="dialog-actions">
+          <button class="btn" type="button" data-action="cancel" data-i18n="daily.cancel"></button>
+          <button class="btn btn-danger" type="submit" data-i18n="set.googleUnlink"></button>
         </div>
       </form>
     </dialog>

@@ -12,6 +12,9 @@ const { entriesRouter, warningsRouter } = require('./routes/entries');
 const reportRoutes = require('./routes/reports');
 const adminRoutes = require('./routes/admin');
 
+// Google Identity Services ("Continue with Google")
+const GSI = 'https://accounts.google.com/gsi/';
+
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', config.TRUST_PROXY ? 1 : false);
@@ -21,11 +24,12 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"], // Chart.js sets inline styles on its canvas
+        scriptSrc: ["'self'", GSI],
+        styleSrc: ["'self'", "'unsafe-inline'", GSI], // Chart.js sets inline styles on its canvas
         imgSrc: ["'self'", 'data:'],
         fontSrc: ["'self'"],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'", GSI],
+        frameSrc: [GSI],
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
         baseUri: ["'self'"],
@@ -33,6 +37,9 @@ app.use(
         upgradeInsecureRequests: config.isProd ? [] : null,
       },
     },
+    // Google's sign-in popup needs these two relaxed from helmet's defaults.
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   })
 );
 

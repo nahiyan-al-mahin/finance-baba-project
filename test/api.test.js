@@ -132,3 +132,56 @@ test('requests without the CSRF header are rejected and lockout works', async ()
   const r = await client()('POST', '/auth/login', { username: 'carol', password: 'carol1234' });
   assert.equal(r.body.error, 'ACCOUNT_LOCKED');
 });
+
+test('Google sign-in: first-time signup, returning login, linking, unlinking', async () => {
+  const { google } = require('../server/google');
+  google.enabled = () => true;
+  google.verify = async (credential) => {
+    if (!credential.startsWith('sub-')) throw new (require('../server/errors').AppError)(401, 'GOOGLE_INVALID');
+    return { sub: credential, email: `${credential}@gmail.com`, name: 'Karim Ali' };
+  };
+
+  const c1 = client();
+  let r = await c1('POST', '/auth/google', { credential: 'bogus' });
+  assert.equal(r.body.error, 'GOOGLE_INVALID');
+  r = await c1('POST', '/auth/google', { credential: 'sub-karim' });
+  assert.equal(r.body.needsSignup, true);
+  assert.equal(r.body.username, 'subkarim');
+  const signupToken = r.body.signupToken;
+  r = await c1('POST', '/auth/google/signup', { signupToken, username: 'karim', displayName: 'Karim', password: 'short' });
+  assert.equal(r.body.error, 'WEAK_PASSWORD'); // token survives a validation error
+  r = await c1('POST', '/auth/google/signup', { signupToken, username: 'karim', displayName: 'Karim', password: 'karim1234' });
+  assert.equal(r.status, 201);
+  assert.equal(r.body.user.googleEmail, 'sub-karim@gmail.com');
+  await c1('POST', '/entries', { date: today, type: 'expense', amount: 99, category: 'food', note: 'Fuchka' });
+  r = await c1('POST', '/auth/google/signup', { signupToken, username: 'karim2', displayName: 'K', password: 'karim1234' });
+  assert.equal(r.body.error, 'GOOGLE_EXPIRED'); // single use
+  assert.ok(!JSON.stringify(db.prepare('SELECT * FROM users').all()).includes('sub-karim'));
+
+  // Returning user: Google alone unlocks the encrypted data
+  const c2 = client();
+  r = await c2('POST', '/auth/google', { credential: 'sub-karim' });
+  assert.equal(r.body.user.displayName, 'Karim');
+  r = await c2('GET', '/entries');
+  assert.equal(r.body.entries[0].note, 'Fuchka');
+  // ...and the password still works too
+  r = await client()('POST', '/auth/login', { username: 'karim', password: 'karim1234' });
+  assert.equal(r.status, 200);
+
+  // Existing password account links a Google account; one Google account cannot be linked twice
+  const dina = client();
+  await dina('POST', '/auth/signup', { username: 'dina', displayName: 'Dina', password: 'dina12345' });
+  r = await dina('POST', '/auth/google/link', { credential: 'sub-karim' });
+  assert.equal(r.body.error, 'GOOGLE_IN_USE');
+  r = await dina('POST', '/auth/google/link', { credential: 'sub-dina' });
+  assert.equal(r.body.user.googleEmail, 'sub-dina@gmail.com');
+  r = await client()('POST', '/auth/google', { credential: 'sub-dina' });
+  assert.equal(r.body.user.displayName, 'Dina');
+
+  r = await dina('POST', '/auth/google/unlink', { password: 'wrong1234' });
+  assert.equal(r.status, 401);
+  r = await dina('POST', '/auth/google/unlink', { password: 'dina12345' });
+  assert.equal(r.body.user.googleEmail, null);
+  r = await client()('POST', '/auth/google', { credential: 'sub-dina' });
+  assert.equal(r.body.needsSignup, true);
+});

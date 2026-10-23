@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0f766e" />
+    <meta name="theme-color" content="#faf5ea" />
     <meta name="description" content="Finance Baba — track daily spending and income, see weekly, monthly and yearly analysis, and download PDF statements." />
     <title>Finance Baba</title>
     <link rel="icon" href="/img/logo.svg" type="image/svg+xml" />
@@ -80,7 +80,41 @@
             </div>
             <button class="btn btn-primary btn-block" type="submit" data-i18n="auth.signup">Create account</button>
           </form>
+
+          <div id="google-area" hidden>
+            <div class="divider"><span data-i18n="auth.or">or</span></div>
+            <div id="google-btn" class="google-btn"></div>
+          </div>
         </div>
+
+        <!-- First Google sign-in: pick a username + password -->
+        <form id="google-signup-form" novalidate hidden>
+          <h2 data-i18n="google.finishTitle"></h2>
+          <p class="small"><span data-i18n="google.signedInAs"></span> <strong id="google-email"></strong></p>
+          <p class="muted small" data-i18n="google.finishBody"></p>
+          <div class="field">
+            <label for="gs-name" data-i18n="auth.displayName">Your name</label>
+            <input class="input" id="gs-name" name="displayName" autocomplete="name" maxlength="60" required />
+          </div>
+          <div class="field">
+            <label for="gs-username" data-i18n="auth.username">Username</label>
+            <input class="input" id="gs-username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" required />
+            <span class="hint" data-i18n="auth.usernameHint"></span>
+          </div>
+          <div class="field">
+            <label for="gs-password" data-i18n="auth.password">Password</label>
+            <input class="input" id="gs-password" name="password" type="password" autocomplete="new-password" required />
+            <span class="hint" data-i18n="auth.passwordHint"></span>
+          </div>
+          <div class="field">
+            <label for="gs-password2" data-i18n="auth.confirmPassword">Confirm password</label>
+            <input class="input" id="gs-password2" name="password2" type="password" autocomplete="new-password" required />
+          </div>
+          <button class="btn btn-primary btn-block" type="submit" data-i18n="auth.signup">Create account</button>
+          <p class="small" style="text-align: center; margin-top: 0.85rem">
+            <a href="#" id="google-cancel" data-i18n="auth.backToLogin">Back to log in</a>
+          </p>
+        </form>
 
         <!-- Forgot password -->
         <form id="recover-form" novalidate hidden>

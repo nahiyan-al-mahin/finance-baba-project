@@ -3,7 +3,7 @@
   "short_name": "Finance Baba",
   "start_url": "/app",
   "display": "standalone",
-  "background_color": "#f6f8f7",
+  "background_color": "#faf5ea",
   "theme_color": "#0f766e",
   "icons": [{ "src": "/img/logo.svg", "sizes": "any", "type": "image/svg+xml" }]
 }

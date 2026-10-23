@@ -7,7 +7,8 @@ const sessions = require('../sessions');
 const { AppError } = require('../errors');
 const { isValidTimezone, todayIn } = require('../dates');
 const { requireAuth, startSession, endSession } = require('../middleware');
-const { DEFAULT_TZ, UNLOCK_MS } = require('../config');
+const { google, rememberPending, getPending, dropPending } = require('../google');
+const { DEFAULT_TZ, UNLOCK_MS, GOOGLE_CLIENT_ID } = require('../config');
 
 const router = express.Router();
 
@@ -29,6 +30,11 @@ function me(row, dek) {
   return { ...users.toPublic(row, dek), today: todayIn(row.timezone) };
 }
 
+/** Public settings the login page needs. */
+router.get('/config', (req, res) => {
+  res.json({ googleClientId: google.enabled() ? GOOGLE_CLIENT_ID : null });
+});
+
 router.post('/signup', authLimiter, async (req, res) => {
   const { username, displayName, password, timezone } = req.body || {};
   const tz = isValidTimezone(timezone) ? timezone : DEFAULT_TZ;
@@ -42,6 +48,44 @@ router.post('/login', authLimiter, async (req, res) => {
   const { user, dek } = await users.login(username, password);
   startSession(res, user, dek);
   res.json({ user: me(user, dek) });
+});
+
+// ---- Sign in with Google (Gmail)
+router.post('/google', authLimiter, async (req, res) => {
+  const identity = await google.verify(req.body?.credential);
+  const found = users.loginWithGoogle(identity.sub);
+  if (found) {
+    startSession(res, found.user, found.dek);
+    return res.json({ user: me(found.user, found.dek) });
+  }
+  // First time with this Google account: the browser asks for a username + password next.
+  const suggested = users.normalizeUsername(identity.email.split('@')[0]).replace(/[^a-z0-9_.]/g, '').slice(0, 30);
+  res.json({ needsSignup: true, signupToken: rememberPending(identity), email: identity.email, name: identity.name, username: suggested });
+});
+
+router.post('/google/signup', authLimiter, async (req, res) => {
+  const { signupToken, username, displayName, password, timezone } = req.body || {};
+  const identity = getPending(signupToken);
+  if (users.findByGoogle(identity.sub)) throw new AppError(409, 'GOOGLE_IN_USE');
+  const tz = isValidTimezone(timezone) ? timezone : DEFAULT_TZ;
+  const { user, dek, recoveryCode } = await users.createUser({ username, displayName, password, timezone: tz });
+  users.linkGoogle(user, dek, identity);
+  dropPending(signupToken);
+  startSession(res, user, dek);
+  res.status(201).json({ user: me(users.findById(user.id), dek), recoveryCode });
+});
+
+router.post('/google/link', authLimiter, requireAuth, async (req, res) => {
+  const identity = await google.verify(req.body?.credential);
+  const row = currentUser(req);
+  users.linkGoogle(row, req.session.dek, identity);
+  res.json({ user: me(users.findById(row.id), req.session.dek) });
+});
+
+router.post('/google/unlink', authLimiter, requireAuth, async (req, res) => {
+  const row = currentUser(req);
+  await users.unlinkGoogle(row, req.body?.password);
+  res.json({ user: me(users.findById(row.id), req.session.dek) });
 });
 
 router.post('/logout', (req, res) => {
