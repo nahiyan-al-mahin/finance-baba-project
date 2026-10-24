@@ -129,7 +129,9 @@ function writeReport(out, { lang, summary, profile, publicId, target = null }) {
   const L = LABELS[lang] || LABELS.en;
   const f = makeFormatters(lang);
   const title = { week: L.weekTitle, month: L.monthTitle, year: L.yearTitle }[summary.period];
-  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true, info: { Title: `${L.app} — ${title}`, Author: L.app } });
+  // Start with our own font: otherwise pdfkit loads its built-in Helvetica through a dynamic require
+  // that Vercel's bundler can't see, and PDF creation fails there.
+  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true, font: loadFont(), info: { Title: `${L.app} — ${title}`, Author: L.app } });
   doc.registerFont('main', loadFont());
   doc.font('main');
   doc.pipe(out);

@@ -6,7 +6,7 @@
   "cleanUrls": true,
   "functions": {
     "api/index.js": {
-      "includeFiles": "{public/fonts/**,shared/**}",
+      "includeFiles": "{public/fonts/**,shared/**,node_modules/pdfkit/js/standard-fonts/**}",
       "maxDuration": 30
     }
   },
