@@ -26,11 +26,21 @@ function render() {
   const month = monthLabel(s.month);
 
   if (s.amount === null) {
-    badge.hidden = true;
-    body.innerHTML = s.canEdit
-      ? `<p class="small">${escapeHtml(t('tgt.none', { month }))} ${escapeHtml(t('tgt.canSet', { date: editUntil(s.month, s.editDays) }))}</p>
-         <button class="btn btn-primary btn-sm" type="button" data-target-edit>${icon('target')} ${escapeHtml(t('tgt.set'))}</button>`
-      : `<p class="small muted">${icon('lock')} ${escapeHtml(t('tgt.lockedNone', { date: nextWindow(s.month) }))}</p>`;
+    // No target: say so plainly, so people know the feature exists and when they can use it.
+    badge.hidden = false;
+    badge.className = 'badge';
+    badge.textContent = t('tgt.badgeNone');
+    body.innerHTML = `
+      <div class="target-empty">
+        <strong>${escapeHtml(t('tgt.noneTitle', { month }))}</strong>
+        <span class="small muted">${escapeHtml(t('tgt.spentSoFar', { spent: fmt.money(s.spent) }))}</span>
+      </div>
+      ${
+        s.canEdit
+          ? `<p class="small">${escapeHtml(t('tgt.canSet', { date: editUntil(s.month, s.editDays) }))}</p>
+             <button class="btn btn-primary btn-sm" type="button" data-target-edit>${icon('target')} ${escapeHtml(t('tgt.set'))}</button>`
+          : `<p class="small muted">${icon('lock')} ${escapeHtml(t('tgt.lockedNone', { date: nextWindow(s.month) }))}</p>`
+      }`;
     return;
   }
 

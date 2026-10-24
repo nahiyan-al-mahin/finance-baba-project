@@ -2351,3 +2351,21 @@ body.gated {
 :root[data-theme='sketch'] .gate {
   background: var(--bg);
 }
+.target-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0.75rem 0 0.5rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background: var(--well);
+  box-shadow: var(--inset);
+}
+.target-empty strong {
+  font-size: 1.05rem;
+}
+:root[data-theme='sketch'] .target-empty {
+  border: 2px dashed var(--border);
+  border-radius: var(--wobble-2);
+  background: transparent;
+}

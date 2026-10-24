@@ -54,6 +54,8 @@ function renderMonth(m, target) {
   $('#sb-income').textContent = fmt.money(income);
   $('#sb-expense').textContent = fmt.money(expense);
   $('#sb-net').textContent = fmt.money(net);
+  $('#sb-target').textContent = target?.amount ? fmt.money(target.amount) : t('tgt.notSet');
+  $('#sb-target').className = `num ${target?.amount ? (target.over ? 'expense' : '') : 'muted'}`;
   $('#sb-net').className = `num ${net < 0 ? 'expense' : 'income'}`;
   // With a monthly target the meter shows how much of it is used; otherwise spending vs income.
   const base = target?.amount || income;
