@@ -2192,3 +2192,162 @@ body > .site-footer {
 :root[data-theme='sketch'] .site-footer {
   border-top: 2px dashed var(--border);
 }
+
+/* ========== Monthly target ========== */
+.target-numbers {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin-top: 0.75rem;
+}
+.target-numbers strong {
+  font-size: 1.1rem;
+}
+.target-meter {
+  height: 14px;
+  margin: 0.6rem 0 0.7rem;
+}
+.target-meter > span.over {
+  background: linear-gradient(180deg, #f08a5d, var(--expense));
+}
+.target-meter > span.warn {
+  background: linear-gradient(180deg, #f6c453, #c98a0c);
+}
+.target-card .i {
+  vertical-align: -4px;
+}
+.dialog-icon.target {
+  background: linear-gradient(160deg, var(--brand-light), var(--brand-strong));
+}
+:root[data-theme='sketch'] .target-meter > span.over {
+  background: repeating-linear-gradient(-45deg, var(--expense) 0 3px, transparent 3px 7px);
+}
+:root[data-theme='sketch'] .target-meter > span.warn {
+  background: repeating-linear-gradient(-45deg, #c98a0c 0 3px, transparent 3px 7px);
+}
+
+/* ========== Toggle switch ========== */
+.switch-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0 0.4rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.switch-row input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.switch {
+  position: relative;
+  flex: none;
+  width: 48px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--well);
+  border: 1px solid var(--border);
+  box-shadow: var(--inset);
+  transition: background 0.2s;
+}
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--surface-hi), var(--surface-2));
+  box-shadow: var(--hi), var(--sh-1);
+  transition: transform 0.2s;
+}
+.switch-row input:checked + .switch {
+  background: linear-gradient(180deg, var(--brand-light), var(--brand-strong));
+}
+.switch-row input:checked + .switch::after {
+  transform: translateX(20px);
+}
+.switch-row input:focus-visible + .switch {
+  outline: 3px solid color-mix(in srgb, var(--brand) 55%, transparent);
+  outline-offset: 2px;
+}
+:root[data-theme='sketch'] .switch {
+  border: 2px solid var(--border);
+  box-shadow: none;
+}
+:root[data-theme='sketch'] .switch::after {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  box-shadow: none;
+  top: 2px;
+  left: 2px;
+}
+:root[data-theme='sketch'] .switch-row input:checked + .switch {
+  background: var(--brand);
+}
+
+/* ========== Email ========== */
+.email-ok {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.code-input {
+  font-size: 1.4rem;
+  letter-spacing: 0.4em;
+  text-align: center;
+  max-width: 240px;
+}
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  padding: 1rem;
+  background: radial-gradient(1200px 600px at 10% -10%, var(--bg-glow), transparent 60%), var(--bg);
+  overflow-y: auto;
+}
+.gate-card {
+  width: min(460px, 100%);
+  text-align: center;
+  box-shadow: var(--hi), var(--sh-3);
+}
+.gate-card .email-form {
+  text-align: left;
+  margin-top: 0.5rem;
+}
+.gate-art {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin: 0.5rem auto 1rem;
+  border-radius: 26px;
+  color: var(--on-brand);
+  background: linear-gradient(150deg, var(--brand-light), var(--brand-strong));
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), inset 0 -5px 0 rgba(0, 0, 0, 0.18), 0 18px 30px -12px color-mix(in srgb, var(--brand) 75%, transparent);
+}
+.gate-art .i {
+  width: 38px;
+  height: 38px;
+}
+body.gated {
+  overflow: hidden;
+}
+:root[data-theme='sketch'] .gate-art {
+  background: var(--brand);
+  border: 2px solid var(--border);
+  border-radius: var(--wobble-2);
+  box-shadow: 4px 4px 0 var(--border);
+}
+:root[data-theme='sketch'] .gate {
+  background: var(--bg);
+}

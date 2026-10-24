@@ -13,7 +13,10 @@
  * - Accounts linked to Google keep a third copy wrapped with a server-held key, because a
  *   Google sign-in carries no password to derive a key from. A stolen database alone still
  *   reveals nothing; the attacker would also need the server secret.
- * - The unwrapped DEK lives only in server memory for the session's lifetime.
+ * - Users with monthly email reports switched on (the default) keep one more copy wrapped with a
+ *   server-held key, so the report can be built at month end while they are offline. Turning the
+ *   reports off deletes that copy.
+ * - While logged in, the DEK is kept in the sessions table encrypted with the cookie token.
  */
 const crypto = require('crypto');
 const { SECRET } = require('./config');
@@ -21,6 +24,7 @@ const { SECRET } = require('./config');
 const SCRYPT_OPTS = { N: 1 << 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
 const SERVER_DATA_KEY = Buffer.from(crypto.hkdfSync('sha256', SECRET, Buffer.alloc(0), 'finance-baba:server-data', 32));
 const GOOGLE_WRAP_KEY = Buffer.from(crypto.hkdfSync('sha256', SECRET, Buffer.alloc(0), 'finance-baba:google-wrap', 32));
+const REPORT_WRAP_KEY = Buffer.from(crypto.hkdfSync('sha256', SECRET, Buffer.alloc(0), 'finance-baba:report-wrap', 32));
 
 const b64 = (buf) => buf.toString('base64');
 const unb64 = (str) => Buffer.from(str, 'base64');
@@ -69,6 +73,10 @@ const serverDecrypt = (payload, aad) => decrypt(SERVER_DATA_KEY, payload, aad).t
 const wrapForGoogle = (dek, aad) => encrypt(GOOGLE_WRAP_KEY, dek, aad);
 const unwrapForGoogle = (payload, aad) => decrypt(GOOGLE_WRAP_KEY, payload, aad);
 
+/** Wraps / unwraps a user's DEK so monthly email reports can be built while they are offline (opt-out). */
+const wrapForReports = (dek, aad) => encrypt(REPORT_WRAP_KEY, dek, aad);
+const unwrapForReports = (payload, aad) => decrypt(REPORT_WRAP_KEY, payload, aad);
+
 /** Keyed hash so usernames can be looked up without being stored in plain text. */
 const blindIndex = (value) => crypto.createHmac('sha256', SECRET).update(value).digest('hex');
 
@@ -103,6 +111,8 @@ module.exports = {
   serverDecrypt,
   wrapForGoogle,
   unwrapForGoogle,
+  wrapForReports,
+  unwrapForReports,
   blindIndex,
   safeEqual,
   generateRecoveryCode,

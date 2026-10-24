@@ -7,8 +7,18 @@ import { googleAvailable, renderGoogleButton } from './google.js';
 import { icon } from './icons.js';
 import { addDays, openCalendar, renderWeekStrip, invalidateMarks } from './calendar.js';
 import { initSidebar, refreshSidebar } from './sidebar.js';
+import { initTarget, loadTarget, handleTargetUpdate, renderTarget } from './target.js';
+import { renderEmailWidget } from './email.js';
 
 const state = { user: null, today: null, date: null, unlockedUntil: 0, view: 'daily', entries: [] };
+// Shared with the email widgets (Settings card and the confirm-email gate).
+const emailState = { user: null, pendingEmail: null, emailEnabled: false };
+const widgets = [];
+
+function setUser(user) {
+  state.user = user;
+  emailState.user = user;
+}
 
 // ---------- helpers ----------
 function handleError(err) {
@@ -154,6 +164,7 @@ function initDaily() {
         showFormError(form, null);
         const res = await withUnlock(() => post('/entries', { ...data, date: state.date }));
         if (!res) return;
+        handleTargetUpdate(res.target);
         form.elements.note.value = '';
         form.elements.amount.value = '';
         form.elements.note.focus();
@@ -226,6 +237,7 @@ async function editEntry(entry) {
   ).catch(handleError);
   if (saved) {
     toast(t('daily.saved'));
+    handleTargetUpdate(saved.target);
     invalidateMarks();
     refreshSidebar();
     loadDay().catch(handleError);
@@ -239,6 +251,7 @@ async function deleteEntry(entry) {
   }).catch(handleError);
   if (done) {
     toast(t('daily.deleted'));
+    handleTargetUpdate(done.target);
     invalidateMarks();
     refreshSidebar();
     loadDay().catch(handleError);
@@ -273,7 +286,17 @@ function renderSettings() {
   $('#set-id').textContent = state.user.id;
   $$('#lang-toggle [data-lang]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === getLang())));
   $$('#theme-toggle [data-theme-choice]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.themeChoice === getTheme())));
+  $('#reports-toggle').checked = !!state.user.reportsEnabled;
+  widgets.forEach((w) => w.redraw());
   renderGoogleCard();
+}
+
+/** Accounts must confirm their own email (when the server can send email). */
+function updateEmailGate() {
+  const gate = $('#email-gate');
+  const needed = emailState.emailEnabled && !state.user.emailVerified;
+  gate.hidden = !needed;
+  document.body.classList.toggle('gated', needed);
 }
 
 async function renderGoogleCard() {
@@ -286,7 +309,7 @@ async function renderGoogleCard() {
   if (!linked) {
     const ok = await renderGoogleButton($('#google-link-btn'), async (credential) => {
       try {
-        ({ user: state.user } = await post('/auth/google/link', { credential }));
+        setUser((await post('/auth/google/link', { credential })).user);
         toast(t('set.googleLinkedToast'));
         renderGoogleCard();
       } catch (err) {
@@ -309,7 +332,7 @@ function initSettings() {
       try {
         showFormError(form, null);
         const { user } = await patch('/auth/profile', { displayName: form.elements.displayName.value });
-        state.user = user;
+        setUser(user);
         refreshSidebar();
         toast(t('set.nameSaved'));
       } catch (err) {
@@ -338,9 +361,20 @@ function initSettings() {
   $('#google-unlink').addEventListener('click', async () => {
     const res = await dialogAction($('#unlink-dialog'), (data) => post('/auth/google/unlink', { password: data.get('password') }));
     if (!res) return;
-    state.user = res.user;
+    setUser(res.user);
     toast(t('set.googleUnlinkedToast'));
     renderGoogleCard();
+  });
+
+  $('#reports-toggle').addEventListener('change', async (e) => {
+    const enabled = e.target.checked;
+    try {
+      setUser((await put('/account/reports', { enabled })).user);
+      toast(t(enabled ? 'email.reportsOn' : 'email.reportsOff'));
+    } catch (err) {
+      e.target.checked = !enabled;
+      handleError(err);
+    }
   });
 
   $('#replay-tour').addEventListener('click', () => startOnboarding());
@@ -368,7 +402,9 @@ async function boot() {
     location.replace('/admin');
     return;
   }
-  state.user = me.user;
+  setUser(me.user);
+  emailState.pendingEmail = me.pendingEmail;
+  emailState.emailEnabled = me.emailEnabled;
   state.today = me.user.today;
   state.date = me.user.today;
   state.unlockedUntil = me.unlockedUntil || 0;
@@ -377,10 +413,32 @@ async function boot() {
   initReports({ getToday: () => state.today, onError: handleError });
   initSettings();
   initSidebar({ getUser: () => state.user, getToday: () => state.today, onError: handleError });
+  initTarget({ onError: handleError, onTargetChange: refreshSidebar });
+
+  const onVerified = () => {
+    updateEmailGate();
+    widgets.forEach((w) => w.redraw());
+    if (!state.user.onboarded) startOnboarding(() => post('/auth/onboarded').catch(() => {}));
+  };
+  widgets.push(renderEmailWidget($('#email-widget'), emailState, onVerified));
+  widgets.push(renderEmailWidget($('#gate-widget'), emailState, onVerified));
+  $('#gate-logout').addEventListener('click', async () => {
+    await post('/auth/logout').catch(() => {});
+    location.replace('/');
+  });
+  updateEmailGate();
+
   showView(location.hash.slice(1) || 'daily');
-  await Promise.all([loadDay(), loadWarnings()]).catch(handleError);
+  await Promise.all([loadDay(), loadWarnings(), loadTarget()]).catch(handleError);
+
+  // Emails and PDF reports use the language picked in the app.
+  const syncLang = () => (state.user.lang !== getLang() ? put('/account/lang', { lang: getLang() }).then(() => (state.user.lang = getLang())) : null);
+  syncLang()?.catch(() => {});
 
   onLangChange(() => {
+    syncLang()?.catch(() => {});
+    renderTarget();
+    widgets.forEach((w) => w.redraw());
     refreshSidebar();
     renderDayHeader();
     renderEntries(lastTotals);
@@ -390,7 +448,7 @@ async function boot() {
     loadWarnings().catch(() => {});
   });
 
-  if (!state.user.onboarded) {
+  if (!state.user.onboarded && $('#email-gate').hidden) {
     startOnboarding(() => post('/auth/onboarded').catch(() => {}));
   }
 }

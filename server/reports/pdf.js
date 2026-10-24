@@ -45,6 +45,9 @@ const LABELS = {
     page: 'Page',
     of: 'of',
     confidential: 'Confidential — generated from your encrypted Finance Baba account.',
+    target: 'Monthly target',
+    withinTarget: 'within target',
+    overTarget: 'over target by',
   },
   bn: {
     app: 'ফাইন্যান্স বাবা',
@@ -80,6 +83,9 @@ const LABELS = {
     page: 'পৃষ্ঠা',
     of: '/',
     confidential: 'গোপনীয় — আপনার এনক্রিপ্টেড ফাইন্যান্স বাবা অ্যাকাউন্ট থেকে তৈরি।',
+    target: 'মাসিক লক্ষ্য',
+    withinTarget: 'লক্ষ্যের মধ্যে',
+    overTarget: 'লক্ষ্যের চেয়ে বেশি',
   },
 };
 
@@ -106,7 +112,7 @@ function categoryName(type, id, lang) {
 }
 
 /** Streams a PDF report for a month or a year into `out` (an HTTP response). */
-function writeReport(out, { lang, summary, profile, publicId }) {
+function writeReport(out, { lang, summary, profile, publicId, target = null }) {
   const L = LABELS[lang] || LABELS.en;
   const f = makeFormatters(lang);
   const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true, info: { Title: `${L.app} — ${summary.period === 'year' ? L.yearTitle : L.monthTitle}`, Author: L.app } });
@@ -159,6 +165,14 @@ function writeReport(out, { lang, summary, profile, publicId }) {
   if (summary.savingsRatePct !== null) extras.push(`${L.savingsRate}: ${f.pct(summary.savingsRatePct)}`);
   if (summary.expenseChangePct !== null) extras.push(`${L.vsPrev}: ${summary.expenseChangePct > 0 ? '+' : ''}${f.pct(summary.expenseChangePct)}`);
   doc.fillColor(COLORS.muted).fontSize(9).text(extras.join('    •    '), left, doc.y, { width });
+  if (target && summary.period === 'month') {
+    const over = t.expense - target;
+    doc.moveDown(0.4);
+    doc
+      .fillColor(over > 0 ? COLORS.expense : COLORS.income)
+      .fontSize(10)
+      .text(`${L.target}: ${f.money(target)} — ${over > 0 ? `${L.overTarget} ${f.money(over)}` : L.withinTarget}`, left, doc.y, { width });
+  }
   doc.moveDown(1.2);
 
   const sectionTitle = (title) => {
@@ -278,4 +292,17 @@ function writeReport(out, { lang, summary, profile, publicId }) {
   doc.end();
 }
 
-module.exports = { writeReport };
+/** Renders a report into a Buffer (for email attachments). */
+function reportBuffer(options) {
+  const { PassThrough } = require('stream');
+  return new Promise((resolve, reject) => {
+    const sink = new PassThrough();
+    const chunks = [];
+    sink.on('data', (c) => chunks.push(c));
+    sink.on('end', () => resolve(Buffer.concat(chunks)));
+    sink.on('error', reject);
+    writeReport(sink, options);
+  });
+}
+
+module.exports = { writeReport, reportBuffer };

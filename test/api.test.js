@@ -8,8 +8,12 @@ const path = require('path');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fb-test-'));
 process.env.DATA_DIR = tmp;
 process.env.APP_SECRET = 'a'.repeat(64);
+process.env.AUTH_RATE_LIMIT = '1000';
 
+const { mail } = require('../server/mail');
+const outbox = mail.useTestTransport();
 const app = require('../server/app');
+const dates = require('../server/dates');
 const db = require('../server/db');
 const users = require('../server/users');
 const { todayIn, addDays } = require('../server/dates');
@@ -49,7 +53,7 @@ const yesterday = addDays(today, -1);
 
 test('full user flow: signup, entries, encryption, past-day lock, reports, recovery', async () => {
   const alice = client();
-  let r = await alice('POST', '/auth/signup', { username: 'Alice', displayName: 'Alice Rahman', password: 'secret123', timezone: 'Asia/Dhaka' });
+  let r = await alice('POST', '/auth/signup', { email: 'alice@example.com', username: 'Alice', displayName: 'Alice Rahman', password: 'secret123', timezone: 'Asia/Dhaka' });
   assert.equal(r.status, 201);
   assert.match(r.body.recoveryCode, /^[A-Z0-9]{5}(-[A-Z0-9]{5}){3}$/);
   const recoveryCode = r.body.recoveryCode;
@@ -62,7 +66,7 @@ test('full user flow: signup, entries, encryption, past-day lock, reports, recov
 
   // Nothing readable at rest
   const raw = JSON.stringify(await db.all('SELECT * FROM entries')) + JSON.stringify(await db.all('SELECT * FROM users')) + JSON.stringify(await db.all('SELECT * FROM sessions'));
-  for (const secret of ['বিরিয়ানি', 'lunch', '250.5', 'Alice', 'alice', 'secret123']) assert.ok(!raw.includes(secret), `"${secret}" leaked`);
+  for (const secret of ['বিরিয়ানি', 'lunch', '250.5', 'Alice', 'alice', 'secret123', 'example.com']) assert.ok(!raw.includes(secret), `"${secret}" leaked`);
 
   // Past days need the password
   r = await alice('POST', '/entries', { date: yesterday, type: 'expense', amount: 10, category: 'transport', note: 'Rickshaw' });
@@ -89,7 +93,7 @@ test('full user flow: signup, entries, encryption, past-day lock, reports, recov
 
   // Bob cannot see Alice's data
   const bob = client();
-  await bob('POST', '/auth/signup', { username: 'bob', displayName: 'Bob', password: 'secret456', timezone: 'Asia/Dhaka' });
+  await bob('POST', '/auth/signup', { email: 'bob@example.com', username: 'bob', displayName: 'Bob', password: 'secret456', timezone: 'Asia/Dhaka' });
   r = await bob('GET', '/entries');
   assert.equal(r.body.entries.length, 0);
   const aliceEntry = (await db.one('SELECT id FROM entries ORDER BY id LIMIT 1')).id;
@@ -128,7 +132,7 @@ test('requests without the CSRF header are rejected and lockout works', async ()
   const res = await fetch(`${base}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
   assert.equal(res.status, 403);
   const c = client();
-  await c('POST', '/auth/signup', { username: 'carol', displayName: 'Carol', password: 'carol1234' });
+  await c('POST', '/auth/signup', { email: 'carol@example.com', username: 'carol', displayName: 'Carol', password: 'carol1234' });
   for (let i = 0; i < 5; i++) await client()('POST', '/auth/login', { username: 'carol', password: 'nope12345' });
   const r = await client()('POST', '/auth/login', { username: 'carol', password: 'carol1234' });
   assert.equal(r.body.error, 'ACCOUNT_LOCKED');
@@ -172,7 +176,7 @@ test('Google sign-in: first-time signup, returning login, linking, unlinking', a
 
   // Existing password account links a Google account; one Google account cannot be linked twice
   const dina = client();
-  await dina('POST', '/auth/signup', { username: 'dina', displayName: 'Dina', password: 'dina12345' });
+  await dina('POST', '/auth/signup', { email: 'dina@example.com', username: 'dina', displayName: 'Dina', password: 'dina12345' });
   r = await dina('POST', '/auth/google/link', { credential: 'sub-karim' });
   assert.equal(r.body.error, 'GOOGLE_IN_USE');
   r = await dina('POST', '/auth/google/link', { credential: 'sub-dina' });
@@ -190,7 +194,7 @@ test('Google sign-in: first-time signup, returning login, linking, unlinking', a
 
 test('sessions live in the database and only the cookie can unlock them', async () => {
   const dave = client();
-  let r = await dave('POST', '/auth/signup', { username: 'dave', displayName: 'Dave', password: 'dave12345' });
+  let r = await dave('POST', '/auth/signup', { email: 'dave@example.com', username: 'dave', displayName: 'Dave', password: 'dave12345' });
   assert.equal(r.status, 201);
   const rows = await db.all("SELECT s.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE u.public_id = $1", [r.body.user.id]);
   assert.equal(rows.length, 1);
@@ -210,4 +214,88 @@ test('sessions live in the database and only the cookie can unlock them', async 
   assert.ok((await db.all("SELECT * FROM rate_limits WHERE key LIKE 'auth:%'")).length > 0);
   r = await dave('DELETE', '/entries/not-a-number');
   assert.equal(r.status, 401);
+});
+
+const codeFrom = (to) => {
+  const msg = [...outbox].reverse().find((m) => m.to === to && /\b\d{6}\b/.test(m.text));
+  return msg && msg.text.match(/\b(\d{6})\b/)[1];
+};
+
+test('email: sign-up sends a code, verifying it enables login by email', async () => {
+  const eve = client();
+  let r = await eve('POST', '/auth/signup', { username: 'eve', displayName: 'Eve', password: 'eve123456', email: 'Eve@Example.com' });
+  assert.equal(r.status, 201);
+  assert.equal(r.body.pendingEmail, 'eve@example.com');
+  assert.equal(r.body.user.emailVerified, false);
+  assert.equal(r.body.user.reportsEnabled, true); // monthly reports on by default
+
+  r = await eve('POST', '/account/email/verify', { code: '000000' === codeFrom('eve@example.com') ? '111111' : '000000' });
+  assert.equal(r.body.error, 'INVALID_CODE');
+  r = await eve('POST', '/account/email/verify', { code: codeFrom('eve@example.com') });
+  assert.equal(r.body.user.emailVerified, true);
+  assert.equal(r.body.user.email, 'eve@example.com');
+
+  r = await client()('POST', '/auth/login', { username: 'EVE@example.com', password: 'eve123456' });
+  assert.equal(r.status, 200);
+  r = await client()('POST', '/auth/signup', { username: 'eve2', displayName: 'Eve 2', password: 'eve123456', email: 'eve@example.com' });
+  assert.equal(r.body.error, 'EMAIL_TAKEN');
+  r = await client()('POST', '/auth/signup', { username: 'noemail', displayName: 'X', password: 'eve123456' });
+  assert.equal(r.body.error, 'INVALID_EMAIL');
+
+  // Reports can be switched off (the server-held key copy is deleted)
+  r = await eve('PUT', '/account/reports', { enabled: false });
+  assert.equal(r.body.user.reportsEnabled, false);
+  assert.equal((await db.one("SELECT report_dek FROM users WHERE public_id = $1", [r.body.user.id])).report_dek, null);
+  r = await eve('PUT', '/account/reports', { enabled: true });
+  assert.equal(r.body.user.reportsEnabled, true);
+});
+
+test('monthly target: only on days 1-3, over-target alert and email once', async () => {
+  const frank = client();
+  const at = (iso) => dates.setClock(() => Date.parse(iso));
+  try {
+    at('2026-11-02T06:00:00Z'); // 2 Nov in Dhaka
+    await frank('POST', '/auth/signup', { username: 'frank', displayName: 'Frank', password: 'frank1234', email: 'frank@example.com' });
+    await frank('POST', '/account/email/verify', { code: codeFrom('frank@example.com') });
+
+    let r = await frank('PUT', '/account/target', { amount: 1000 });
+    assert.deepEqual([r.body.amount, r.body.canEdit, r.body.over], [1000, true, false]);
+
+    r = await frank('POST', '/entries', { date: '2026-11-02', type: 'expense', amount: 600, category: 'food', note: 'Groceries' });
+    assert.equal(r.body.target.newlyOver, false);
+    const before = outbox.length;
+    r = await frank('POST', '/entries', { date: '2026-11-02', type: 'expense', amount: 500, category: 'rent', note: 'Rent part' });
+    assert.equal(r.body.target.newlyOver, true);
+    assert.equal(r.body.target.over, true);
+    assert.equal(outbox.length, before + 1);
+    assert.match(outbox.at(-1).subject, /over your monthly target/);
+    r = await frank('POST', '/entries', { date: '2026-11-02', type: 'expense', amount: 10, category: 'food', note: 'Tea' });
+    assert.equal(r.body.target.newlyOver, false); // only the first time
+    assert.equal(outbox.length, before + 1);
+
+    at('2026-11-04T06:00:00Z'); // day 4: locked
+    r = await frank('PUT', '/account/target', { amount: 5000 });
+    assert.equal(r.body.error, 'TARGET_LOCKED');
+    r = await frank('GET', '/account/target');
+    assert.deepEqual([r.body.amount, r.body.canEdit, r.body.spent], [1000, false, 1110]);
+
+    // Month end: the report for November is emailed once, with the PDF attached
+    at('2026-12-01T06:00:00Z');
+    const { runMonthlyReports } = require('../server/monthlyReports');
+    const first = await runMonthlyReports();
+    assert.equal(first.failed, 0);
+    const report = outbox.find((m) => m.to === 'frank@example.com' && m.attachments);
+    assert.ok(report, 'report email sent');
+    assert.equal(report.attachments[0].content.subarray(0, 4).toString(), '%PDF');
+    const count = outbox.filter((m) => m.attachments).length;
+    await runMonthlyReports();
+    assert.equal(outbox.filter((m) => m.attachments).length, count); // not sent twice
+  } finally {
+    dates.setClock(null);
+  }
+});
+
+test('cron endpoint requires the secret', async () => {
+  const res = await fetch(`${base}/cron/monthly-reports`);
+  assert.equal(res.status, 401);
 });

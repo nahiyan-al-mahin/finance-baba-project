@@ -1,5 +1,5 @@
 import { get, post } from './api.js';
-import { t } from './i18n.js';
+import { t, getLang } from './i18n.js';
 import { $, $$, initChrome, showFormError, busy, toast, downloadText } from './ui.js';
 import { googleAvailable, renderGoogleButton } from './google.js';
 
@@ -62,6 +62,8 @@ $('#signup-form').addEventListener('submit', (e) => {
     try {
       showFormError(form, null);
       const { user, recoveryCode } = await post('/auth/signup', {
+        email: data.email,
+        lang: getLang(),
         displayName: data.displayName,
         username: data.username,
         password: data.password,
@@ -131,6 +133,7 @@ $('#google-signup-form').addEventListener('submit', (e) => {
       showFormError(form, null);
       const { user, recoveryCode } = await post('/auth/google/signup', {
         signupToken: googleSignupToken,
+        lang: getLang(),
         displayName: data.displayName,
         username: data.username,
         password: data.password,

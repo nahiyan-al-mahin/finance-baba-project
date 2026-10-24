@@ -41,7 +41,7 @@
 
           <form id="login-form" novalidate>
             <div class="field">
-              <label for="login-username" data-i18n="auth.username">Username</label>
+              <label for="login-username" data-i18n="auth.usernameOrEmail">Username or email</label>
               <input class="input" id="login-username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required />
             </div>
             <div class="field">
@@ -61,6 +61,11 @@
             <div class="field">
               <label for="su-name" data-i18n="auth.displayName">Your name</label>
               <input class="input" id="su-name" name="displayName" autocomplete="name" maxlength="60" required />
+            </div>
+            <div class="field">
+              <label for="su-email" data-i18n="auth.email">Email</label>
+              <input class="input" id="su-email" name="email" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required />
+              <span class="hint" data-i18n="auth.emailHint"></span>
             </div>
             <div class="field">
               <label for="su-username" data-i18n="auth.username">Username</label>

@@ -51,12 +51,25 @@ module.exports = {
   SECRET: loadSecret(),
   TRUST_PROXY: process.env.TRUST_PROXY === '1' || onVercel,
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+  // Email (SMTP). Gmail works with an App Password: smtp.gmail.com, port 465.
+  SMTP: {
+    host: process.env.SMTP_HOST || '',
+    port: Number(process.env.SMTP_PORT) || 465,
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+  },
+  MAIL_FROM: process.env.MAIL_FROM || process.env.SMTP_USER || '',
+  MAIL_LOG: process.env.MAIL_LOG === '1', // development: print emails to the console instead of sending
+  APP_URL: (process.env.APP_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000')).replace(/\/$/, ''),
+  CRON_SECRET: process.env.CRON_SECRET || '',
+  TARGET_EDIT_DAYS: 3, // the monthly target can be set or changed on days 1-3 of the month
   COOKIE_NAME: 'fb_sid',
   COOKIE_SECURE: isProd || onVercel,
   SESSION_IDLE_MS: 30 * 60 * 1000, // logged out after 30 min of inactivity
   SESSION_MAX_MS: 12 * 60 * 60 * 1000, // and after 12 h at most
   UNLOCK_MS: 5 * 60 * 1000, // past-day editing stays unlocked for 5 min after entering the password
   MAX_FAILED_LOGINS: 5,
+  AUTH_RATE_LIMIT: Number(process.env.AUTH_RATE_LIMIT) || 30, // sign-in/sign-up requests per IP per 15 min
   LOCK_MS: 15 * 60 * 1000,
   WEEK_START: 6, // 0 = Sunday ... 6 = Saturday (common in Bangladesh)
   DEFAULT_TZ: 'Asia/Dhaka',

@@ -1,6 +1,7 @@
 'use strict';
 const db = require('./db');
 const sessions = require('./sessions');
+const users = require('./users');
 const { COOKIE_NAME, COOKIE_SECURE, SESSION_MAX_MS } = require('./config');
 
 const cookieOptions = { httpOnly: true, secure: COOKIE_SECURE, sameSite: 'strict', path: '/', maxAge: SESSION_MAX_MS };
@@ -36,6 +37,7 @@ function requireRole(role) {
 }
 
 async function startSession(res, user, dek) {
+  await users.ensureDefaultReports(user, dek);
   res.cookie(COOKIE_NAME, await sessions.create(user, dek), cookieOptions);
 }
 

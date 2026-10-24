@@ -74,12 +74,43 @@ CREATE TABLE IF NOT EXISTS google_pending (
   expires_at BIGINT NOT NULL
 );
 
+-- Monthly spending target (amount encrypted with the user's key). One row per user per month.
+CREATE TABLE IF NOT EXISTS targets (
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  month      TEXT NOT NULL,
+  data_enc   TEXT NOT NULL,
+  updated_at BIGINT NOT NULL,
+  PRIMARY KEY (user_id, month)
+);
+
+-- Email verification codes (one pending address per user).
+CREATE TABLE IF NOT EXISTS email_codes (
+  user_id    INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  code_hash  TEXT NOT NULL,
+  email_enc  TEXT NOT NULL,
+  email_idx  TEXT NOT NULL,
+  attempts   INTEGER NOT NULL DEFAULT 0,
+  expires_at BIGINT NOT NULL
+);
+
 -- Counters for rate limiting (shared by all server instances).
 CREATE TABLE IF NOT EXISTS rate_limits (
   key      TEXT PRIMARY KEY,
   hits     INTEGER NOT NULL,
   reset_at BIGINT NOT NULL
 );
+
+-- Columns added after the first release (safe to run on an existing database).
+-- email_enc is encrypted with the server key so monthly reports can be sent while the user is offline;
+-- report_dek is the user's data key wrapped with the server key, present only while monthly email reports are on.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_idx TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_enc TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS lang TEXT NOT NULL DEFAULT 'en';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS report_dek TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_report_month TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS reports_opt_out INTEGER NOT NULL DEFAULT 0;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email_idx);
 `;
 
 const INT8 = 20; // Postgres BIGINT / COUNT(*) — our values are millisecond timestamps and counts, safe as JS numbers

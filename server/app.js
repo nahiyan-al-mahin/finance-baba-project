@@ -12,6 +12,8 @@ const authRoutes = require('./routes/auth');
 const { entriesRouter, warningsRouter } = require('./routes/entries');
 const reportRoutes = require('./routes/reports');
 const adminRoutes = require('./routes/admin');
+const accountRoutes = require('./routes/account');
+const { runMonthlyReports } = require('./monthlyReports');
 const { ensureAdminFromEnv } = require('./bootstrap');
 
 // Google Identity Services ("Continue with Google")
@@ -50,6 +52,14 @@ const api = express.Router();
 api.use(rateLimit({ windowMs: 60 * 1000, limit: 300, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'TOO_MANY_REQUESTS' } }));
 api.use(express.json({ limit: '20kb' }));
 api.get('/health', (req, res) => res.json({ ok: true })); // for hosting platforms' health checks
+
+// Vercel Cron calls this once a day with "Authorization: Bearer <CRON_SECRET>".
+api.get('/cron/monthly-reports', async (req, res) => {
+  if (!config.CRON_SECRET || req.get('authorization') !== `Bearer ${config.CRON_SECRET}`) {
+    return res.status(401).json({ error: 'UNAUTHENTICATED' });
+  }
+  res.json(await runMonthlyReports());
+});
 api.use(cookieParser());
 api.use((req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -67,6 +77,7 @@ api.use(csrfGuard);
 api.use('/auth', authRoutes);
 api.use('/entries', requireUser, entriesRouter);
 api.use('/warnings', requireUser, warningsRouter);
+api.use('/account', requireUser, accountRoutes);
 api.use('/reports', requireUser, reportRoutes);
 api.use('/admin', requireAdmin, adminRoutes);
 api.use((req, res) => res.status(404).json({ error: 'NOT_FOUND' }));

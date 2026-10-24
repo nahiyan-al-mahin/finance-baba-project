@@ -14,6 +14,12 @@ function isValidTimezone(tz) {
   }
 }
 
+// Replaceable clock so tests can pretend it is a given day.
+let clock = () => Date.now();
+function setClock(fn) {
+  clock = fn || (() => Date.now());
+}
+
 function todayIn(tz) {
   const fmt = new Intl.DateTimeFormat('en-CA', {
     timeZone: isValidTimezone(tz) ? tz : DEFAULT_TZ,
@@ -21,7 +27,7 @@ function todayIn(tz) {
     month: '2-digit',
     day: '2-digit',
   });
-  return fmt.format(new Date());
+  return fmt.format(new Date(clock()));
 }
 
 const parse = (str) => new Date(`${str}T00:00:00Z`);
@@ -70,4 +76,9 @@ function eachDay(start, end) {
   return days;
 }
 
-module.exports = { isValidTimezone, todayIn, isValidDate, addDays, periodRange, previousAnchor, eachDay, parse };
+/** 'YYYY-MM' of the month before the one containing `date`. */
+function previousMonth(date) {
+  return addDays(`${date.slice(0, 7)}-01`, -1).slice(0, 7);
+}
+
+module.exports = { isValidTimezone, todayIn, setClock, isValidDate, addDays, periodRange, previousAnchor, previousMonth, eachDay, parse };

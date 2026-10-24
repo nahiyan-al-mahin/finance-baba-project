@@ -15,6 +15,18 @@ const recoveryAad = (row) => `recovery:${row.public_id}`;
 const profileAad = (row) => `profile:${row.public_id}`;
 const googleAad = (row) => `google:${row.public_id}`;
 const googleIndex = (sub) => c.blindIndex(`google:${sub}`);
+const reportAad = (row) => `report:${row.public_id}`;
+
+const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/;
+const normalizeEmail = (e) => String(e || '').trim().toLowerCase();
+const emailIndex = (e) => c.blindIndex(`email:${normalizeEmail(e)}`);
+const emailAad = (row) => `email:${row.public_id}`;
+
+function validateEmail(email) {
+  const e = normalizeEmail(email);
+  if (!EMAIL_RE.test(e) || e.length > 254) throw new AppError(400, 'INVALID_EMAIL');
+  return e;
+}
 
 function validateUsername(username) {
   if (!USERNAME_RE.test(normalizeUsername(username))) throw new AppError(400, 'INVALID_USERNAME');
@@ -40,6 +52,9 @@ async function newPublicId() {
 
 const findById = (id) => db.one('SELECT * FROM users WHERE id = $1', [id]);
 const findByUsername = (u) => db.one('SELECT * FROM users WHERE username_idx = $1', [usernameIndex(u)]);
+const findByEmail = (e) => db.one('SELECT * FROM users WHERE email_idx = $1 AND email_verified = 1', [emailIndex(e)]);
+/** Login accepts a username or a verified email address. */
+const findByLogin = (id) => (String(id || '').includes('@') ? findByEmail(id) : findByUsername(id));
 
 async function wrapForPassword(row, dek, password) {
   const salt = c.newSalt();
@@ -54,7 +69,11 @@ async function wrapForRecovery(row, dek) {
   return { code, recovery_salt: c.b64(salt), recovery_wrapped_dek: c.encrypt(kek, dek, recoveryAad(row)) };
 }
 
-async function createUser({ username, displayName, password, timezone, role = 'user' }) {
+/**
+ * Creates an account. `verifiedEmail` is only passed when the address is already proven (Google sign-in);
+ * otherwise the email is confirmed separately with a code (see account.js).
+ */
+async function createUser({ username, displayName, password, timezone, role = 'user', verifiedEmail = null, lang = 'en' }) {
   validateUsername(username);
   validatePassword(password);
   const name = validateDisplayName(displayName);
@@ -67,8 +86,9 @@ async function createUser({ username, displayName, password, timezone, role = 'u
   try {
     const user = await db.one(
       `INSERT INTO users (public_id, username_idx, role, auth_salt, auth_hash, wrapped_dek, recovery_salt,
-         recovery_wrapped_dek, profile_enc, timezone, created_at, last_active_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+         recovery_wrapped_dek, profile_enc, timezone, created_at, last_active_at,
+         email_idx, email_enc, email_verified, lang, report_dek)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *`,
       [
         row.public_id,
         usernameIndex(username),
@@ -82,11 +102,17 @@ async function createUser({ username, displayName, password, timezone, role = 'u
         timezone,
         Date.now(),
         Date.now(),
+        verifiedEmail ? emailIndex(verifiedEmail) : null,
+        verifiedEmail ? c.serverEncrypt(normalizeEmail(verifiedEmail), emailAad(row)) : null,
+        verifiedEmail ? 1 : 0,
+        lang === 'bn' ? 'bn' : 'en',
+        // Monthly email reports are on by default for normal users (see crypto.js); admins don't get reports.
+        role === 'user' ? c.wrapForReports(dek, reportAad(row)) : null,
       ]
     );
     return { user, dek, recoveryCode: rec.code };
   } catch (err) {
-    if (db.isUniqueViolation(err)) throw new AppError(409, 'USERNAME_TAKEN');
+    if (db.isUniqueViolation(err)) throw new AppError(409, String(err.constraint || err.detail || '').includes('email') ? 'EMAIL_TAKEN' : 'USERNAME_TAKEN');
     throw err;
   }
 }
@@ -122,7 +148,7 @@ async function unlockWithPassword(row, password) {
 }
 
 async function login(username, password) {
-  const row = await findByUsername(username);
+  const row = await findByLogin(username);
   if (!row) {
     await c.deriveKeys(String(password || ''), DUMMY_SALT, 'password'); // same timing as a real check
     throw new AppError(401, 'INVALID_CREDENTIALS');
@@ -204,12 +230,44 @@ function updateProfile(row, dek, profile) {
   return db.run('UPDATE users SET profile_enc = $1 WHERE id = $2', [c.encryptJSON(dek, profile, profileAad(row)), row.id]);
 }
 
+/** The user's verified email address, or null. Readable without their password (needed for monthly reports). */
+function getEmail(row) {
+  return row.email_verified && row.email_enc ? c.serverDecrypt(row.email_enc, emailAad(row)) : null;
+}
+
+/** Turns monthly email reports on (stores a server-wrapped copy of the data key) or off (deletes it). */
+function setReports(row, dek, enabled) {
+  return db.run('UPDATE users SET report_dek = $1, reports_opt_out = $2 WHERE id = $3', [
+    enabled ? c.wrapForReports(dek, reportAad(row)) : null,
+    enabled ? 0 : 1,
+    row.id,
+  ]);
+}
+
+/** Accounts created before monthly reports existed get them switched on at their next login (unless they opted out). */
+async function ensureDefaultReports(row, dek) {
+  if (row.role !== 'user' || row.report_dek || row.reports_opt_out) return;
+  await db.run('UPDATE users SET report_dek = $1 WHERE id = $2 AND report_dek IS NULL AND reports_opt_out = 0', [
+    c.wrapForReports(dek, reportAad(row)),
+    row.id,
+  ]);
+}
+
+/** Data key for building a monthly report while the user is offline, or null when reports are off. */
+function reportKey(row) {
+  return row.report_dek ? c.unwrapForReports(row.report_dek, reportAad(row)) : null;
+}
+
 function toPublic(row, dek) {
   const profile = getProfile(row, dek);
   return {
     id: row.public_id,
     role: row.role,
     displayName: profile.displayName,
+    email: getEmail(row),
+    emailVerified: !!row.email_verified,
+    reportsEnabled: !!row.report_dek,
+    lang: row.lang,
     googleEmail: row.google_idx ? profile.googleEmail || '' : null,
     timezone: row.timezone,
     onboarded: !!row.onboarded,
@@ -234,4 +292,13 @@ module.exports = {
   unlinkGoogle,
   loginWithGoogle,
   findByGoogle,
+  findByEmail,
+  validateEmail,
+  normalizeEmail,
+  emailIndex,
+  emailAad,
+  getEmail,
+  setReports,
+  ensureDefaultReports,
+  reportKey,
 };

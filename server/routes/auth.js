@@ -9,13 +9,15 @@ const { isValidTimezone, todayIn } = require('../dates');
 const { requireAuth, startSession, endSession } = require('../middleware');
 const { google, rememberPending, getPending, dropPending } = require('../google');
 const { PgStore } = require('../rateLimitStore');
-const { DEFAULT_TZ, UNLOCK_MS, GOOGLE_CLIENT_ID } = require('../config');
+const account = require('../account');
+const { mail } = require('../mail');
+const { DEFAULT_TZ, UNLOCK_MS, GOOGLE_CLIENT_ID, AUTH_RATE_LIMIT } = require('../config');
 
 const router = express.Router();
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 30,
+  limit: AUTH_RATE_LIMIT,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   store: new PgStore('auth'),
@@ -32,17 +34,33 @@ function me(row, dek) {
   return { ...users.toPublic(row, dek), today: todayIn(row.timezone) };
 }
 
+/** Sends the email confirmation code after sign-up; a mail problem never blocks the sign-up itself. */
+async function sendFirstCode(user, email, name, lang) {
+  if (!email || !mail.enabled()) return null;
+  try {
+    return await account.startVerification(user, email, { name, lang });
+  } catch (err) {
+    console.error('[finance-baba] Could not send verification email:', err.code || err.message);
+    return null;
+  }
+}
+
 /** Public settings the login page needs. */
 router.get('/config', (req, res) => {
-  res.json({ googleClientId: google.enabled() ? GOOGLE_CLIENT_ID : null });
+  res.json({ googleClientId: google.enabled() ? GOOGLE_CLIENT_ID : null, emailEnabled: mail.enabled() });
 });
 
 router.post('/signup', authLimiter, async (req, res) => {
   const { username, displayName, password, timezone } = req.body || {};
+  const lang = req.body?.lang === 'bn' ? 'bn' : 'en';
+  // Every account needs its owner's own email (monthly reports and alerts are sent there).
+  const email = users.validateEmail(req.body?.email);
+  if (await users.findByEmail(email)) throw new AppError(409, 'EMAIL_TAKEN');
   const tz = isValidTimezone(timezone) ? timezone : DEFAULT_TZ;
-  const { user, dek, recoveryCode } = await users.createUser({ username, displayName, password, timezone: tz });
+  const { user, dek, recoveryCode } = await users.createUser({ username, displayName, password, timezone: tz, lang });
   await startSession(res, user, dek);
-  res.status(201).json({ user: me(user, dek), recoveryCode });
+  const pendingEmail = await sendFirstCode(user, email, users.getProfile(user, dek).displayName, lang);
+  res.status(201).json({ user: me(user, dek), recoveryCode, pendingEmail });
 });
 
 router.post('/login', authLimiter, async (req, res) => {
@@ -71,7 +89,10 @@ router.post('/google/signup', authLimiter, async (req, res) => {
   const identity = await getPending(signupToken);
   if (await users.findByGoogle(identity.sub)) throw new AppError(409, 'GOOGLE_IN_USE');
   const tz = isValidTimezone(timezone) ? timezone : DEFAULT_TZ;
-  const { user, dek, recoveryCode } = await users.createUser({ username, displayName, password, timezone: tz });
+  const lang = req.body?.lang === 'bn' ? 'bn' : 'en';
+  // Google has already confirmed this address, so it becomes the account email straight away.
+  const verifiedEmail = (await users.findByEmail(identity.email)) ? null : identity.email;
+  const { user, dek, recoveryCode } = await users.createUser({ username, displayName, password, timezone: tz, lang, verifiedEmail });
   await users.linkGoogle(user, dek, identity);
   await dropPending(signupToken);
   await startSession(res, user, dek);
@@ -98,7 +119,12 @@ router.post('/logout', async (req, res) => {
 
 router.get('/me', requireAuth, async (req, res) => {
   const row = await currentUser(req);
-  res.json({ user: me(row, req.session.dek), unlockedUntil: req.session.unlockedUntil });
+  res.json({
+    user: me(row, req.session.dek),
+    unlockedUntil: req.session.unlockedUntil,
+    pendingEmail: await account.pendingEmail(row),
+    emailEnabled: mail.enabled(),
+  });
 });
 
 /** Re-enter the password to edit past days. Unlocks for a few minutes. */

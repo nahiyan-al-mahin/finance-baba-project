@@ -6,6 +6,7 @@ const { isValidDate } = require('../dates');
 const { summarize } = require('../reports/summary');
 const { writeReport } = require('../reports/pdf');
 const { context } = require('./entries');
+const targets = require('../targets');
 
 const router = express.Router();
 
@@ -31,7 +32,8 @@ router.get('/pdf', async (req, res) => {
   const name = period === 'year' ? summary.range.start.slice(0, 4) : summary.range.start.slice(0, 7);
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="finance-baba-${name}.pdf"`);
-  writeReport(res, { lang, summary, profile: users.getProfile(row, ctx.dek), publicId: row.public_id });
+  const target = period === 'month' ? await targets.read(ctx.userId, ctx.dek, summary.range.start.slice(0, 7)) : null;
+  writeReport(res, { lang, summary, profile: users.getProfile(row, ctx.dek), publicId: row.public_id, target: target?.amount });
 });
 
 module.exports = router;

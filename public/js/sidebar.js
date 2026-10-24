@@ -48,18 +48,24 @@ function renderProfile() {
   $('#sb-id').textContent = user.id;
 }
 
-function renderMonth(m) {
+function renderMonth(m, target) {
   const { income, expense, net } = m.totals;
   $('#sb-month').textContent = fmt.monthYear(m.range.start);
   $('#sb-income').textContent = fmt.money(income);
   $('#sb-expense').textContent = fmt.money(expense);
   $('#sb-net').textContent = fmt.money(net);
   $('#sb-net').className = `num ${net < 0 ? 'expense' : 'income'}`;
-  const pct = income > 0 ? (expense / income) * 100 : null;
+  // With a monthly target the meter shows how much of it is used; otherwise spending vs income.
+  const base = target?.amount || income;
+  const pct = base > 0 ? (expense / base) * 100 : null;
   const meter = $('#sb-meter');
   meter.style.width = `${pct === null ? (expense > 0 ? 100 : 0) : Math.min(100, pct)}%`;
   meter.className = pct === null || pct > 90 ? 'danger' : pct > 70 ? 'warn' : '';
-  $('#sb-meter-text').textContent = pct === null ? t(expense > 0 ? 'side.noIncome' : 'rep.noData') : t('side.spentOfIncome', { pct: fmt.pct(pct) });
+  $('#sb-meter-text').textContent = target?.amount
+    ? t(target.over ? 'tgt.overBy' : 'side.targetUsed', { pct: fmt.pct(pct), amount: fmt.money(expense - target.amount) })
+    : pct === null
+      ? t(expense > 0 ? 'side.noIncome' : 'rep.noData')
+      : t('side.spentOfIncome', { pct: fmt.pct(pct) });
   $('#sb-pdf').href = `/api/reports/pdf?period=month&date=${m.range.start}&lang=${getLang()}`;
 
   const top = m.expenseByCategory.slice(0, 3);
@@ -110,11 +116,12 @@ export async function refreshSidebar() {
   renderProfile();
   renderTip(today);
   try {
-    const [month, week] = await Promise.all([
+    const [month, week, target] = await Promise.all([
       get(`/reports/summary?period=month&date=${today}`),
       get(`/reports/summary?period=week&date=${weekStart(today)}`),
+      get('/account/target'),
     ]);
-    renderMonth(month);
+    renderMonth(month, target);
     renderWeek(week, today);
     renderStreak(await streak(today, month));
   } catch (err) {

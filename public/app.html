@@ -79,6 +79,14 @@
           <div class="card stat net"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#wallet"></use></svg></span><div class="stat-label" data-i18n="daily.balance"></div><div class="stat-value" id="day-net">৳0</div></div>
         </div>
 
+        <div class="card target-card" id="target-card">
+          <div class="row-between wrap">
+            <h2 class="card-title" style="margin: 0"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#target"></use></svg></span><span data-i18n="tgt.title">Monthly spending target</span></h2>
+            <span class="badge" id="target-badge" hidden></span>
+          </div>
+          <div id="target-body"></div>
+        </div>
+
         <form class="card" id="add-form" novalidate>
           <div class="row-between wrap" style="margin-bottom: 0.85rem">
             <h2 class="card-title" style="margin: 0"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#plus"></use></svg></span><span data-i18n="daily.addTitle">Add an entry</span></h2>
@@ -222,6 +230,17 @@
           <button class="btn" type="submit" data-i18n="set.changePassword">Change password</button>
         </form>
 
+        <div class="card" id="email-card">
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#mail"></use></svg></span><span data-i18n="email.title">Email & monthly reports</span></h2>
+          <div id="email-widget"></div>
+          <label class="switch-row" id="reports-row">
+            <input type="checkbox" id="reports-toggle" />
+            <span class="switch" aria-hidden="true"></span>
+            <span data-i18n="email.reports">Email me my monthly report (PDF) when each month ends</span>
+          </label>
+          <p class="small muted" data-i18n="email.reportsNote"></p>
+        </div>
+
         <div class="card" id="google-card" hidden>
           <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#shield"></use></svg></span><span data-i18n="set.google">Google account</span></h2>
           <p class="small" id="google-status"></p>
@@ -355,6 +374,34 @@
         </div>
       </form>
     </dialog>
+
+    <dialog id="target-dialog">
+      <form novalidate>
+        <h2 class="row"><span class="dialog-icon target"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#target"></use></svg></span><span id="target-dialog-title"></span></h2>
+        <p class="small muted" data-i18n="tgt.help"></p>
+        <div class="field">
+          <label for="tg-amount" data-i18n="tgt.amount">Maximum to spend this month (৳)</label>
+          <input class="input" id="tg-amount" name="amount" type="number" inputmode="decimal" min="1" step="1" required />
+        </div>
+        <div class="dialog-actions">
+          <button class="btn btn-danger" type="button" id="target-remove" data-i18n="tgt.remove" hidden>Remove target</button>
+          <span style="flex: 1"></span>
+          <button class="btn" type="button" data-action="cancel" data-i18n="daily.cancel"></button>
+          <button class="btn btn-primary" type="submit" data-i18n="daily.save"></button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Accounts must confirm their own email before using the app (when email is set up on the server) -->
+    <div class="gate" id="email-gate" hidden>
+      <div class="card gate-card">
+        <div class="gate-art"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#mail"></use></svg></div>
+        <h2 data-i18n="email.gateTitle">Confirm your email</h2>
+        <p class="muted" data-i18n="email.gateBody"></p>
+        <div id="gate-widget"></div>
+        <button class="btn btn-ghost btn-sm" type="button" id="gate-logout"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#logout"></use></svg> <span data-i18n="set.logout"></span></button>
+      </div>
+    </div>
 
     <dialog id="unlink-dialog">
       <form novalidate>

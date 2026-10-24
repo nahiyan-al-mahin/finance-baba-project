@@ -10,6 +10,9 @@ A mobile-friendly personal finance diary. Users log what they spend and what the
 | Daily log | Choose expense or income, write what it was for, then enter the amount and category. The day's total spending is always shown. |
 | Past days locked | Adding, editing or deleting entries on a day that has passed needs the password again. Editing then stays unlocked for 5 minutes. |
 | Analysis | Week (Saturday to Friday), month and year views with charts, category breakdown, comparison with the previous period, savings rate and insights. |
+| Monthly target | Set a spending limit for the month on **days 1–3 only** (then it locks). Crossing it shows an alert, a system notification and sends an email, once per month. |
+| Email | Every account confirms its own email with a 6-digit code (or via Google). Log in with username **or** email. |
+| Month-end report | When a month ends, its full PDF is emailed automatically (can be switched off). Monthly and yearly PDFs can still be downloaded any time. |
 | PDF | Monthly and yearly statements with summary, category bars, day-by-day or month-by-month totals and every transaction, in English or Bangla. |
 | Onboarding | A "what is what" slide tour after the first sign-up (swipe on phones). It can be replayed from Settings. |
 | Privacy | Users see only their own data. Admins see **only counts and anonymous activity signals** and can send warnings that the user must acknowledge. |
@@ -31,6 +34,16 @@ The parts you already know: **HTML, CSS and vanilla JavaScript** in the browser,
 
 No frontend framework or build step is involved: edit a file and refresh the page.
 
+## Email setup (Gmail, free)
+
+1. Turn on **2-Step Verification** for the Gmail account that will send the emails.
+2. Open <https://myaccount.google.com/apppasswords>, create an app password named "Finance Baba" and copy the 16 letters.
+3. Set `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465`, `SMTP_USER=<that Gmail>`, `SMTP_PASS=<the app password>` and `MAIL_FROM=Finance Baba <that Gmail>`.
+
+Gmail allows about 500 emails a day, plenty for a personal project. Any other SMTP service (Brevo, Zoho, …) works the same way. Until email is set up, sign-up still works and the email step is skipped.
+
+Month-end reports are sent by a daily job: on Vercel by **Vercel Cron** (`vercel.json`, needs `CRON_SECRET`), on your own server by a timer inside `npm start`. Each user's previous month is sent once, according to their own time zone.
+
 ## How the encryption works
 
 Even a full copy of the database is useless to an attacker:
@@ -41,7 +54,8 @@ Even a full copy of the database is useless to an attacker:
 4. Usernames are stored as a keyed hash (HMAC), so they cannot be read either.
 5. **Google sign-in.** A Google login carries no password to derive a key from. So an account linked to Google keeps one more wrapped copy of its data key, encrypted with a key that comes from the server secret. A stolen database alone still reveals nothing. Someone who steals the database **and** the server secret could, however, read Google-linked accounts, while password-only accounts stay protected by their passwords. Users who want the strictest protection can leave Google disconnected (Settings → Google account).
 6. While a user is logged in, their data key is kept in the `sessions` table **encrypted with a key derived from the random token in their cookie**. The database only stores a hash of that token, so it cannot unlock the key on its own. Sessions end after 30 minutes idle or 12 hours.
-7. Cookies are `HttpOnly` and `SameSite=Strict`, with a CSRF header check, a strict Content-Security-Policy and account lockout after 5 wrong passwords.
+7. **Monthly email reports.** A report has to be built at month end while the user is offline, so while reports are switched on (the default) the server keeps one more copy of the data key, wrapped with the server secret. Switching reports off in Settings deletes that copy. The email address is stored encrypted with the server key, plus a keyed hash for logging in by email.
+8. Cookies are `HttpOnly` and `SameSite=Strict`, with a CSRF header check, a strict Content-Security-Policy and account lockout after 5 wrong passwords.
 
 > ⚠️ **Keep `APP_SECRET` safe** (or `data/secret.key` when running locally without it). Without it, nothing in the database can be decrypted. Users who lose both their password and their recovery code cannot get their data back. That is by design.
 
@@ -115,6 +129,8 @@ The app runs as a Vercel serverless function (`api/index.js` → `server/app.js`
 | `NODE_ENV` | `production` |
 | `ADMIN_USERNAME`, `ADMIN_PASSWORD` | optional: creates the first admin on the first request. Remove `ADMIN_PASSWORD` afterwards. |
 | `GOOGLE_CLIENT_ID` | optional: enables Continue with Google |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | email sending (see *Email setup*) |
+| `CRON_SECRET` | any long random string; protects the daily month-end report job |
 
 Steps:
 
