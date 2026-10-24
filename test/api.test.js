@@ -85,8 +85,8 @@ test('full user flow: signup, entries, encryption, past-day lock, reports, recov
     assert.equal(r.status, 200);
     assert.ok(r.body.totals.expense >= 250.5);
   }
-  for (const lang of ['en', 'bn']) {
-    r = await alice('GET', `/reports/pdf?period=month&lang=${lang}`);
+  for (const [period, lang] of [['week', 'en'], ['month', 'bn'], ['year', 'en']]) {
+    r = await alice('GET', `/reports/pdf?period=${period}&lang=${lang}`);
     assert.equal(r.status, 200);
     assert.equal(r.body.subarray(0, 4).toString(), '%PDF');
   }

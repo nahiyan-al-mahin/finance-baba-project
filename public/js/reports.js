@@ -1,7 +1,7 @@
 // Weekly / monthly / yearly analysis with Chart.js, plus PDF download links.
 import { get } from './api.js';
 import { t, fmt, getLang, categoryLabel, categoryTile, categoryColor } from './i18n.js';
-import { $, $$, escapeHtml } from './ui.js';
+import { $, $$, escapeHtml, toast, errorMessage } from './ui.js';
 
 const rs = { period: 'month', anchor: null, charts: {}, getToday: null };
 
@@ -144,14 +144,49 @@ export async function loadReports() {
 
   // PDFs cover the month / year containing the selected date.
   const lang = getLang();
+  $('#pdf-week').href = `/api/reports/pdf?period=week&date=${rs.anchor}&lang=${lang}`;
+  $('#pdf-week-label').textContent = `${t('rep.downloadWeek')} · ${fmt.date(s.period === 'week' ? s.range.start : rs.anchor, { day: 'numeric', month: 'short' })}`;
   $('#pdf-month').href = `/api/reports/pdf?period=month&date=${rs.anchor}&lang=${lang}`;
   $('#pdf-year').href = `/api/reports/pdf?period=year&date=${rs.anchor}&lang=${lang}`;
   $('#pdf-month-label').textContent = `${t('rep.downloadMonth')} · ${fmt.monthYear(rs.anchor)}`;
   $('#pdf-year-label').textContent = `${t('rep.downloadYear')} · ${fmt.year(rs.anchor)}`;
 }
 
+/** Downloads a PDF in the background so a server problem shows a message instead of a browser error page. */
+async function downloadPdf(link) {
+  if (link.dataset.busy) return;
+  link.dataset.busy = '1';
+  link.classList.add('loading');
+  try {
+    const res = await fetch(link.href, { credentials: 'same-origin' });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw Object.assign(new Error(body.error || 'generic'), { code: body.error || 'generic', status: res.status });
+    }
+    const name = (res.headers.get('content-disposition') || '').match(/filename="([^"]+)"/)?.[1] || 'finance-baba.pdf';
+    const url = URL.createObjectURL(await res.blob());
+    const a = Object.assign(document.createElement('a'), { href: url, download: name });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch (err) {
+    if (err.status === 401) return location.replace('/');
+    toast(errorMessage(err.code ? err : { code: 'NETWORK' }), 'error');
+  } finally {
+    delete link.dataset.busy;
+    link.classList.remove('loading');
+  }
+}
+
 export function initReports({ getToday, onError }) {
   rs.getToday = getToday;
+  ['#pdf-week', '#pdf-month', '#pdf-year'].forEach((sel) =>
+    $(sel).addEventListener('click', (e) => {
+      e.preventDefault();
+      downloadPdf(e.currentTarget);
+    })
+  );
   $$('#period-toggle [data-period]').forEach((b) =>
     b.addEventListener('click', () => {
       rs.period = b.dataset.period;

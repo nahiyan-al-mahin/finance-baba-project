@@ -2,17 +2,29 @@
 const path = require('path');
 const PDFDocument = require('pdfkit');
 const CATEGORIES = require('../../shared/categories');
-const { ROOT } = require('../config');
 const { parse } = require('../dates');
 
 // Noto Sans Bengali covers both Bangla and Latin, so one font serves both languages.
-const FONT = path.join(ROOT, 'public', 'fonts', 'NotoSansBengali.ttf');
+// Written relative to __dirname so Vercel's bundler sees the file and ships it with the function.
+const FONT = path.join(__dirname, '..', '..', 'public', 'fonts', 'NotoSansBengali.ttf');
+let fontData = null;
+function loadFont() {
+  if (!fontData) {
+    try {
+      fontData = require('fs').readFileSync(FONT);
+    } catch (err) {
+      throw new Error(`PDF font missing at ${FONT} (${err.code})`);
+    }
+  }
+  return fontData;
+}
 
 const COLORS = { brand: '#0f766e', brandLight: '#f6eedd', text: '#2b2620', muted: '#776c5d', line: '#e8dcc6', income: '#2f7d32', expense: '#b91c1c', zebra: '#fcf7ec' };
 
 const LABELS = {
   en: {
     app: 'Finance Baba',
+    weekTitle: 'Weekly Finance Report',
     monthTitle: 'Monthly Finance Report',
     yearTitle: 'Yearly Finance Report',
     preparedFor: 'Prepared for',
@@ -51,6 +63,7 @@ const LABELS = {
   },
   bn: {
     app: 'ফাইন্যান্স বাবা',
+    weekTitle: 'সাপ্তাহিক আর্থিক প্রতিবেদন',
     monthTitle: 'মাসিক আর্থিক প্রতিবেদন',
     yearTitle: 'বার্ষিক আর্থিক প্রতিবেদন',
     preparedFor: 'যার জন্য',
@@ -115,8 +128,9 @@ function categoryName(type, id, lang) {
 function writeReport(out, { lang, summary, profile, publicId, target = null }) {
   const L = LABELS[lang] || LABELS.en;
   const f = makeFormatters(lang);
-  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true, info: { Title: `${L.app} — ${summary.period === 'year' ? L.yearTitle : L.monthTitle}`, Author: L.app } });
-  doc.registerFont('main', FONT);
+  const title = { week: L.weekTitle, month: L.monthTitle, year: L.yearTitle }[summary.period];
+  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true, info: { Title: `${L.app} — ${title}`, Author: L.app } });
+  doc.registerFont('main', loadFont());
   doc.font('main');
   doc.pipe(out);
 
@@ -130,8 +144,13 @@ function writeReport(out, { lang, summary, profile, publicId, target = null }) {
   // ---- Header band
   doc.rect(0, 0, doc.page.width, 110).fill(COLORS.brand);
   doc.fillColor('#ffffff').fontSize(11).text(L.app, left, 28);
-  doc.fontSize(22).text(summary.period === 'year' ? L.yearTitle : L.monthTitle, left, 44);
-  const periodLabel = summary.period === 'year' ? f.year(summary.range.start) : f.monthYear(summary.range.start);
+  doc.fontSize(22).text(title, left, 44);
+  const periodLabel =
+    summary.period === 'year'
+      ? f.year(summary.range.start)
+      : summary.period === 'week'
+        ? `${f.date(summary.range.start)} – ${f.date(summary.range.end)}`
+        : f.monthYear(summary.range.start);
   doc.fontSize(12).text(periodLabel, left, 76);
 
   doc.fillColor(COLORS.text).fontSize(10);
@@ -301,7 +320,11 @@ function reportBuffer(options) {
     sink.on('data', (c) => chunks.push(c));
     sink.on('end', () => resolve(Buffer.concat(chunks)));
     sink.on('error', reject);
-    writeReport(sink, options);
+    try {
+      writeReport(sink, options);
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
