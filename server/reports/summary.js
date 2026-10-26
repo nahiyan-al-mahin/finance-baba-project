@@ -1,6 +1,7 @@
 'use strict';
 const { periodRange, previousAnchor, eachDay } = require('../dates');
 const entries = require('../entries');
+const ledger = require('../ledger');
 
 const round = (n) => Math.round(n * 100) / 100;
 
@@ -34,7 +35,8 @@ function elapsedDays(range, today) {
   return eachDay(range.start, end).length;
 }
 
-async function summarize({ userId, dek, today, money = null, currencyHistory = [] }, period, anchor) {
+async function summarize(ctx, period, anchor) {
+  const { userId, dek, today, money = null, currencyHistory = [] } = ctx;
   const range = periodRange(period, anchor);
   const list = await entries.listByRange(userId, dek, range.start, range.end, money);
   const prevRange = periodRange(period, previousAnchor(period, anchor));
@@ -45,6 +47,8 @@ async function summarize({ userId, dek, today, money = null, currencyHistory = [
   const biggest = expenses.reduce((max, e) => (!max || e.amount > max.amount ? e : max), null);
   const s = series(list, period, range);
   const busiest = s.filter((b) => b.expense > 0).sort((a, b) => b.expense - a.expense)[0] || null;
+  const savings = await ledger.savingsForRange(ctx, range.start, range.end);
+  const loans = await ledger.loansForReport(ctx, range.end);
 
   return {
     currency: money ? money.currency : 'BDT',
@@ -65,6 +69,12 @@ async function summarize({ userId, dek, today, money = null, currencyHistory = [
     biggestExpense: biggest,
     busiestBucket: busiest,
     entries: list,
+    savings,
+    loans: {
+      owe: loans.owe,
+      owed: loans.owed,
+      open: loans.open.map((l) => ({ direction: l.direction, person: l.person, date: l.date, dueDate: l.dueDate, remaining: l.remainingAtEnd })),
+    },
   };
 }
 

@@ -58,6 +58,19 @@ const LABELS = {
     of: 'of',
     confidential: 'Confidential — generated from your encrypted Finance Baba account.',
     currency: 'Currency',
+    ledgerTitle: 'Savings & loans',
+    savingsBalance: 'Savings balance at the end of the period',
+    savingsAdded: 'Put into savings',
+    savingsWithdrawn: 'Taken out of savings',
+    youOwe: 'You still owe',
+    owedToYou: 'Still owed to you',
+    openLoans: 'Open loans',
+    person: 'Person',
+    since: 'Since',
+    due: 'Due',
+    borrowed: 'Borrowed',
+    lent: 'Lent',
+    remaining: 'Remaining',
     currencyChanged: (from, to, date) => `Currency changed from ${from} to ${to} on ${date}.`,
     convertedNote: (source, date) => `Entries made in another currency are converted at the exchange rate of ${date} (${source}); the original amount is shown below them.`,
     target: 'Monthly target',
@@ -100,6 +113,19 @@ const LABELS = {
     of: '/',
     confidential: 'গোপনীয় — আপনার এনক্রিপ্টেড ফাইন্যান্স বাবা অ্যাকাউন্ট থেকে তৈরি।',
     currency: 'মুদ্রা',
+    ledgerTitle: 'সঞ্চয় ও ধার',
+    savingsBalance: 'সময়ের শেষে সঞ্চয়ের পরিমাণ',
+    savingsAdded: 'সঞ্চয়ে রাখা হয়েছে',
+    savingsWithdrawn: 'সঞ্চয় থেকে তোলা হয়েছে',
+    youOwe: 'আপনার এখনও দেনা',
+    owedToYou: 'আপনার এখনও পাওনা',
+    openLoans: 'চলমান ধার',
+    person: 'ব্যক্তি',
+    since: 'শুরু',
+    due: 'ফেরতের তারিখ',
+    borrowed: 'ধার নিয়েছি',
+    lent: 'ধার দিয়েছি',
+    remaining: 'বাকি',
     currencyChanged: (from, to, date) => `${date} তারিখে মুদ্রা ${from} থেকে ${to} করা হয়েছে।`,
     convertedNote: (source, date) => `অন্য মুদ্রায় করা এন্ট্রিগুলো ${date} তারিখের বিনিময় হারে (${source}) রূপান্তর করা হয়েছে; মূল পরিমাণ নিচে দেখানো আছে।`,
     target: 'মাসিক লক্ষ্য',
@@ -319,6 +345,42 @@ function writeReport(out, { lang, summary, profile, publicId, target = null }) {
       ]),
       { rowColor: (row, i, idx) => (i === 4 ? (summary.entries[idx].type === 'income' ? COLORS.income : COLORS.expense) : null) }
     );
+  }
+
+  // ---- Savings & loans
+  const sv = summary.savings;
+  const ln = summary.loans;
+  if (sv && ln && (sv.count || sv.balance || ln.open.length)) {
+    if (!summary.entries.length) doc.moveDown(2);
+    sectionTitle(L.ledgerTitle);
+    const lines = [
+      [L.savingsBalance, f.money(sv.balance), COLORS.brand],
+      [L.savingsAdded, f.money(sv.added), COLORS.income],
+      [L.savingsWithdrawn, f.money(sv.withdrawn), COLORS.expense],
+      [L.youOwe, f.money(ln.owe), COLORS.expense],
+      [L.owedToYou, f.money(ln.owed), COLORS.income],
+    ];
+    for (const [label, value, color] of lines) {
+      ensureSpace(18);
+      const y = doc.y;
+      doc.fillColor(COLORS.text).fontSize(10).text(label, left, y, { width: width * 0.65 });
+      doc.fillColor(color).text(value, left + width * 0.65, y, { width: width * 0.35, align: 'right' });
+      doc.y = y + 17;
+    }
+    doc.y += 8;
+    if (ln.open.length) {
+      table(
+        [
+          { label: L.person, width: width * 0.3 },
+          { label: L.type, width: width * 0.16 },
+          { label: L.since, width: width * 0.17 },
+          { label: L.due, width: width * 0.17 },
+          { label: L.remaining, width: width * 0.2, align: 'right' },
+        ],
+        ln.open.map((l) => [l.person, l.direction === 'lent' ? L.lent : L.borrowed, f.date(l.date), l.dueDate ? f.date(l.dueDate) : '—', f.money(l.remaining)]),
+        { rowColor: (row, i, idx) => (i === 4 ? (ln.open[idx].direction === 'lent' ? COLORS.income : COLORS.expense) : null) }
+      );
+    }
   }
 
   // ---- Footer on every page

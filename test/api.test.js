@@ -348,6 +348,87 @@ test('currency: Taka by default, change is dated, old entries converted, reports
   assert.equal(r.body.totals.expense, 3000); // 2400 Taka + 5 dollars
 });
 
+test('loans stay open until repaid; savings log and balance', async () => {
+  const eva = client();
+  await eva('POST', '/auth/signup', { email: 'eva@example.com', username: 'evaloan', displayName: 'Eva', password: 'eva123456', timezone: 'Asia/Dhaka' });
+
+  // Lend 5000 to Rafi, borrow 2000 from Sumi
+  let r = await eva('POST', '/loans', { direction: 'lent', person: 'Rafi', amount: 5000, date: today, dueDate: addDays(today, 30), note: 'For his exam fee' });
+  assert.equal(r.status, 201);
+  const rafi = r.body.loan;
+  assert.deepEqual([rafi.open, rafi.remaining, rafi.currency], [true, 5000, 'BDT']);
+  r = await eva('POST', '/loans', { direction: 'borrowed', person: 'Sumi', amount: 2000, date: today });
+  const sumi = r.body.loan;
+  r = await eva('POST', '/loans', { direction: 'borrowed', person: 'X', amount: 10, date: yesterday });
+  assert.equal(r.body.error, 'PAST_DAY_LOCKED');
+  r = await eva('POST', '/loans', { direction: 'sideways', person: 'X', amount: 10, date: today });
+  assert.equal(r.body.error, 'INVALID_DIRECTION');
+
+  r = await eva('GET', '/loans');
+  assert.deepEqual(r.body.totals, { owe: 2000, owed: 5000, open: 2 });
+
+  // Partial repayment keeps it open; too much is refused; the rest closes it.
+  r = await eva('POST', `/loans/${rafi.id}/payments`, { amount: 2000, date: today });
+  assert.deepEqual([r.body.loan.open, r.body.loan.remaining], [true, 3000]);
+  r = await eva('POST', `/loans/${rafi.id}/payments`, { amount: 4000, date: today });
+  assert.equal(r.body.error, 'PAYMENT_TOO_BIG');
+  r = await eva('POST', `/loans/${rafi.id}/payments`, { full: true, date: today });
+  assert.deepEqual([r.body.loan.open, r.body.loan.remaining, r.body.loan.settledAt], [false, 0, today]);
+  r = await eva('POST', `/loans/${rafi.id}/payments`, { amount: 1, date: today });
+  assert.equal(r.body.error, 'LOAN_SETTLED');
+
+  // Undoing a repayment re-opens the loan
+  const last = r && (await eva('GET', '/loans')).body.loans.find((l) => l.id === rafi.id).payments.at(-1);
+  r = await eva('DELETE', `/loans/${rafi.id}/payments/${last.id}`);
+  assert.deepEqual([r.body.loan.open, r.body.loan.remaining], [true, 3000]);
+
+  r = await eva('GET', '/loans');
+  assert.deepEqual(r.body.totals, { owe: 2000, owed: 3000, open: 2 });
+
+  // Editing: the amount can't drop below what was repaid
+  r = await eva('PUT', `/loans/${rafi.id}`, { person: 'Rafi bhai', amount: 1000, date: today });
+  assert.equal(r.body.error, 'LOAN_BELOW_PAID');
+  r = await eva('PUT', `/loans/${rafi.id}`, { person: 'Rafi bhai', amount: 6000, date: today, note: 'Exam + books' });
+  assert.deepEqual([r.body.loan.person, r.body.loan.remaining, r.body.loan.direction], ['Rafi bhai', 4000, 'lent']);
+  r = await eva('PUT', `/loans/${rafi.id}`, { person: 'Rafi', amount: 5000, date: today });
+  r = await eva('GET', '/loans');
+  assert.equal(r.body.loans[0].open, true);
+
+  // Loans are encrypted, and other users can't touch them
+  const raw = JSON.stringify(await db.all('SELECT * FROM loans'));
+  assert.ok(!raw.includes('Rafi') && !raw.includes('exam'));
+  r = await client()('DELETE', `/loans/${sumi.id}`);
+  assert.equal(r.status, 401);
+
+  // Savings
+  r = await eva('POST', '/savings', { type: 'deposit', amount: 1500, date: today, note: 'Salary leftovers' });
+  assert.equal(r.status, 201);
+  r = await eva('POST', '/savings', { type: 'withdraw', amount: 2000, date: today });
+  assert.equal(r.body.error, 'NOT_ENOUGH_SAVINGS');
+  r = await eva('POST', '/savings', { type: 'withdraw', amount: 500, date: today, note: 'Doctor' });
+  assert.equal(r.body.summary.balance, 1000);
+  assert.deepEqual([r.body.summary.month.added, r.body.summary.month.withdrawn, r.body.summary.month.net], [1500, 500, 1000]);
+  assert.equal(r.body.summary.months.length, 6);
+  assert.equal(r.body.summary.savedMonths, 1);
+  r = await eva('GET', '/savings');
+  assert.equal(r.body.logs.length, 2);
+  r = await eva('DELETE', `/savings/${r.body.logs[0].id}`);
+  assert.equal(r.body.summary.balance, 1500);
+  assert.ok(!JSON.stringify(await db.all('SELECT * FROM savings')).includes('leftovers'));
+
+  // Both show up in the reports
+  r = await eva('GET', '/reports/summary?period=month');
+  assert.equal(r.body.savings.balance, 1500);
+  assert.deepEqual([r.body.loans.owe, r.body.loans.owed], [2000, 3000]);
+  r = await eva('GET', '/reports/pdf?period=month&lang=bn');
+  assert.equal(r.body.subarray(0, 4).toString(), '%PDF');
+
+  r = await eva('DELETE', `/loans/${sumi.id}`);
+  assert.equal(r.status, 200);
+  r = await eva('GET', '/loans');
+  assert.equal(r.body.totals.owe, 0);
+});
+
 test('cron endpoint requires the secret', async () => {
   const res = await fetch(`${base}/cron/monthly-reports`);
   assert.equal(res.status, 401);

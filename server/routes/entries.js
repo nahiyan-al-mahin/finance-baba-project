@@ -108,4 +108,4 @@ warnings.post('/:id/ack', async (req, res) => {
   res.json({ ok: true });
 });
 
-module.exports = { entriesRouter: router, warningsRouter: warnings, context };
+module.exports = { entriesRouter: router, warningsRouter: warnings, context, assertCanModify };

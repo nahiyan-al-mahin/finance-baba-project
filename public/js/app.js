@@ -10,6 +10,7 @@ import { initSidebar, refreshSidebar } from './sidebar.js';
 import { initTarget, loadTarget, handleTargetUpdate, renderTarget } from './target.js';
 import { renderEmailWidget } from './email.js';
 import { initConvert, loadConvert, renderCurrencyCard } from './convert.js';
+import { initLedger, loadLedger, loadLoans, refreshLedgerText } from './ledger.js';
 
 const state = { user: null, today: null, date: null, unlockedUntil: 0, view: 'daily', entries: [] };
 // Shared with the email widgets (Settings card and the confirm-email gate).
@@ -25,6 +26,7 @@ function setUser(user) {
   if (changed) {
     loadDay().catch(handleError);
     loadTarget().catch(handleError);
+    loadLoans().catch(handleError);
     refreshSidebar();
   }
 }
@@ -77,7 +79,7 @@ async function withUnlock(fn) {
 
 // ---------- navigation ----------
 function showView(view) {
-  if (!['daily', 'reports', 'convert', 'settings'].includes(view)) view = 'daily';
+  if (!['daily', 'reports', 'ledger', 'convert', 'settings'].includes(view)) view = 'daily';
   state.view = view;
   $$('main > section').forEach((s) => (s.hidden = s.id !== `view-${view}`));
   $$('[data-view]').forEach((b) => (b.getAttribute('data-view') === view ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current')));
@@ -86,6 +88,7 @@ function showView(view) {
   if (view === 'reports') loadReports().catch(handleError);
   if (view === 'settings') renderSettings();
   if (view === 'convert') loadConvert().catch(handleError);
+  if (view === 'ledger') loadLedger().catch(handleError);
   if (view === 'daily' && state.user) loadWarnings().catch(() => {});
   window.scrollTo(0, 0);
 }
@@ -429,6 +432,7 @@ async function boot() {
   initSettings();
   initSidebar({ getUser: () => state.user, getToday: () => state.today, onError: handleError });
   initTarget({ onError: handleError, onTargetChange: refreshSidebar });
+  initLedger({ getToday: () => state.today, withUnlock, onError: handleError });
   initConvert({ getUser: () => state.user, getToday: () => state.today, onUser: setUser, onError: handleError });
 
   const onVerified = () => {
@@ -445,7 +449,7 @@ async function boot() {
   updateEmailGate();
 
   showView(location.hash.slice(1) || 'daily');
-  await Promise.all([loadDay(), loadWarnings(), loadTarget()]).catch(handleError);
+  await Promise.all([loadDay(), loadWarnings(), loadTarget(), loadLoans()]).catch(handleError);
 
   // Emails and PDF reports use the language picked in the app.
   const syncLang = () => (state.user.lang !== getLang() ? put('/account/lang', { lang: getLang() }).then(() => (state.user.lang = getLang())) : null);
@@ -462,6 +466,8 @@ async function boot() {
     if (state.view === 'reports') loadReports().catch(handleError);
     if (state.view === 'settings') renderSettings();
     if (state.view === 'convert') loadConvert().catch(handleError);
+    if (state.view === 'ledger') loadLedger().catch(handleError);
+    else refreshLedgerText();
     loadWarnings().catch(() => {});
   });
 

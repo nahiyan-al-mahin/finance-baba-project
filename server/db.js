@@ -100,6 +100,26 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   reset_at BIGINT NOT NULL
 );
 
+-- Loans (borrowed / lent). Everything about a loan is in data_enc, encrypted with the user's key.
+CREATE TABLE IF NOT EXISTS loans (
+  id         SERIAL PRIMARY KEY,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  data_enc   TEXT NOT NULL,
+  created_at BIGINT NOT NULL,
+  updated_at BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_loans_user ON loans(user_id);
+
+-- Savings log (money put in / taken out). Amount, type and note are encrypted.
+CREATE TABLE IF NOT EXISTS savings (
+  id         SERIAL PRIMARY KEY,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  entry_date TEXT NOT NULL,
+  data_enc   TEXT NOT NULL,
+  created_at BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_savings_user_date ON savings(user_id, entry_date);
+
 -- Cached exchange rates (one row).
 CREATE TABLE IF NOT EXISTS fx_rates (
   id         INTEGER PRIMARY KEY,

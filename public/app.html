@@ -17,6 +17,7 @@
       <nav class="topnav" aria-label="Main">
         <button class="navbtn" data-view="daily"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calendar"></use></svg><span data-i18n="nav.daily">Daily</span></button>
         <button class="navbtn" data-view="reports"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chart"></use></svg><span data-i18n="nav.reports">Reports</span></button>
+        <button class="navbtn" data-view="ledger"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#piggy"></use></svg><span data-i18n="nav.ledger">Loans &amp; Savings</span></button>
         <button class="navbtn" data-view="convert"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#exchange"></use></svg><span data-i18n="nav.convert">In Taka</span></button>
         <button class="navbtn" data-view="settings"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg><span data-i18n="nav.settings">Settings</span></button>
       </nav>
@@ -38,6 +39,7 @@
         <nav class="card side-nav" aria-label="Main">
           <button class="navbtn" data-view="daily"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calendar"></use></svg><span data-i18n="nav.daily">Daily</span></button>
           <button class="navbtn" data-view="reports"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chart"></use></svg><span data-i18n="nav.reports">Reports</span></button>
+        <button class="navbtn" data-view="ledger"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#piggy"></use></svg><span data-i18n="nav.ledger">Loans &amp; Savings</span></button>
         <button class="navbtn" data-view="convert"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#exchange"></use></svg><span data-i18n="nav.convert">In Taka</span></button>
           <button class="navbtn" data-view="settings"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg><span data-i18n="nav.settings">Settings</span></button>
         </nav>
@@ -89,6 +91,15 @@
             <span class="badge" id="target-badge" hidden></span>
           </div>
           <div id="target-body"></div>
+        </div>
+
+        <div class="card daily-loans" id="daily-loans" hidden>
+          <div class="row-between wrap">
+            <h2 class="card-title" style="margin: 0"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#handshake"></use></svg></span><span data-i18n="loan.openTitle">Open loans</span></h2>
+            <span class="small muted" id="daily-loans-sum"></span>
+          </div>
+          <ul class="loan-list" id="daily-loan-list"></ul>
+          <button class="btn btn-sm" type="button" id="daily-loans-more"></button>
         </div>
 
         <form class="card" id="add-form" novalidate>
@@ -181,6 +192,126 @@
             <a class="btn btn-primary" id="pdf-month" href="#"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#download"></use></svg> <span id="pdf-month-label"></span></a>
             <a class="btn" id="pdf-year" href="#"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#download"></use></svg> <span id="pdf-year-label"></span></a>
             <a class="btn" id="pdf-week" href="#"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#download"></use></svg> <span id="pdf-week-label"></span></a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= LOANS & SAVINGS ================= -->
+      <section id="view-ledger" class="stack" hidden>
+        <div class="row-between wrap">
+          <div>
+            <h1 data-i18n="nav.ledger">Loans &amp; Savings</h1>
+            <p class="muted small" data-i18n="ledger.lead"></p>
+          </div>
+          <div class="segmented" id="ledger-tabs" role="group">
+            <button type="button" data-ltab="loans"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#handshake"></use></svg> <span data-i18n="ledger.loans">Loans</span></button>
+            <button type="button" data-ltab="savings"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#piggy"></use></svg> <span data-i18n="ledger.savings">Savings</span></button>
+          </div>
+        </div>
+
+        <div id="ledger-loans" class="stack">
+          <div class="grid grid-2">
+            <div class="card stat expense"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#arrow-in"></use></svg></span><div class="stat-label" data-i18n="loan.totalOwe">You owe</div><div class="stat-value" id="ln-owe">0</div></div>
+            <div class="card stat income"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#arrow-out"></use></svg></span><div class="stat-label" data-i18n="loan.totalOwed">Owed to you</div><div class="stat-value" id="ln-owed">0</div></div>
+          </div>
+
+          <form class="card" id="loan-form" novalidate>
+            <div class="row-between wrap" style="margin-bottom: 0.85rem">
+              <h2 class="card-title" style="margin: 0"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#plus"></use></svg></span><span data-i18n="loan.addTitle">Add a loan</span></h2>
+              <div class="segmented" role="group">
+                <button type="button" data-dir="borrowed" data-i18n="loan.borrowed">I borrowed</button>
+                <button type="button" data-dir="lent" data-i18n="loan.lent">I lent</button>
+              </div>
+            </div>
+            <input type="hidden" name="direction" value="borrowed" />
+            <div class="form-grid">
+              <div class="field">
+                <label for="ln-person" data-i18n="loan.fromWhom">From whom?</label>
+                <input class="input" id="ln-person" name="person" maxlength="80" autocomplete="off" required />
+              </div>
+              <div class="field">
+                <label for="ln-amount" data-i18n="daily.amount">Amount</label>
+                <input class="input" id="ln-amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" required />
+              </div>
+              <div class="field">
+                <span class="label" data-i18n="loan.date">Date of the loan</span>
+                <input type="hidden" name="date" />
+                <div class="date-field"><button type="button" class="input date-input" id="ln-date"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calendar"></use></svg><span></span></button></div>
+              </div>
+              <div class="field">
+                <span class="label" data-i18n="loan.due">Return by (optional)</span>
+                <input type="hidden" name="dueDate" />
+                <div class="date-field">
+                  <button type="button" class="input date-input" id="ln-due"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#clock"></use></svg><span></span></button>
+                  <button type="button" class="icon-btn" data-clear hidden data-i18n-title="loan.clearDue"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#trash"></use></svg></button>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label for="ln-note" data-i18n="loan.note">Note (optional)</label>
+              <input class="input" id="ln-note" name="note" maxlength="200" autocomplete="off" data-i18n-placeholder="loan.notePh" />
+            </div>
+            <button class="btn btn-primary btn-block" type="submit"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#plus"></use></svg> <span data-i18n="loan.addBtn">Save loan</span></button>
+          </form>
+
+          <div class="card">
+            <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#handshake"></use></svg></span><span data-i18n="loan.openTitle">Open loans</span></h2>
+            <p class="small muted" data-i18n="loan.openHelp"></p>
+            <ul class="loan-list" id="loan-list"></ul>
+          </div>
+
+          <details class="card" id="loan-settled" hidden>
+            <summary class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#check-circle"></use></svg></span><span data-i18n="loan.settledTitle">Settled loans</span> <span class="badge" id="loan-settled-count"></span></summary>
+            <ul class="loan-list" id="loan-settled-list"></ul>
+          </details>
+        </div>
+
+        <div id="ledger-savings" class="stack" hidden>
+          <div class="card savings-hero">
+            <span class="savings-art"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#piggy"></use></svg></span>
+            <div>
+              <div class="stat-label" data-i18n="sav.balance">Your savings</div>
+              <div class="savings-balance num" id="sv-balance">0</div>
+              <div class="small muted"><span data-i18n="sav.thisMonth">This month</span>: <span class="income num" id="sv-added"></span> <span data-i18n="sav.in">in</span> · <span class="expense num" id="sv-withdrawn"></span> <span data-i18n="sav.out">out</span></div>
+            </div>
+          </div>
+
+          <form class="card" id="saving-form" novalidate>
+            <div class="row-between wrap" style="margin-bottom: 0.85rem">
+              <h2 class="card-title" style="margin: 0"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#wallet"></use></svg></span><span data-i18n="sav.formTitle">Update savings</span></h2>
+              <div class="segmented" role="group">
+                <button type="button" data-stype="deposit" data-i18n="sav.deposit">Put in</button>
+                <button type="button" data-stype="withdraw" data-i18n="sav.withdraw">Take out</button>
+              </div>
+            </div>
+            <input type="hidden" name="type" value="deposit" />
+            <div class="form-grid">
+              <div class="field">
+                <label for="sv-amount" data-i18n="daily.amount">Amount</label>
+                <input class="input" id="sv-amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" required />
+              </div>
+              <div class="field">
+                <span class="label" data-i18n="daily.date">Date</span>
+                <input type="hidden" name="date" />
+                <div class="date-field"><button type="button" class="input date-input" id="sv-date"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calendar"></use></svg><span></span></button></div>
+              </div>
+            </div>
+            <div class="field">
+              <label for="sv-note" data-i18n="loan.note">Note (optional)</label>
+              <input class="input" id="sv-note" name="note" maxlength="200" autocomplete="off" data-i18n-placeholder="sav.notePh" />
+            </div>
+            <button class="btn btn-primary btn-block" type="submit"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#check-circle"></use></svg> <span id="sv-submit-label"></span></button>
+          </form>
+
+          <div class="card">
+            <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chart"></use></svg></span><span data-i18n="sav.trend">Saved each month</span></h2>
+            <div class="sv-bars" id="sv-months"></div>
+            <p class="savings-insight" id="sv-insight"></p>
+          </div>
+
+          <div class="card">
+            <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#list"></use></svg></span><span data-i18n="sav.log">Savings log</span></h2>
+            <ul class="entry-list" id="sv-list"></ul>
           </div>
         </div>
       </section>
@@ -355,6 +486,7 @@
     <nav class="bottomnav" aria-label="Main">
       <button class="navbtn" data-view="daily"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calendar"></use></svg><span data-i18n="nav.daily">Daily</span></button>
       <button class="navbtn" data-view="reports"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chart"></use></svg><span data-i18n="nav.reports">Reports</span></button>
+        <button class="navbtn" data-view="ledger"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#piggy"></use></svg><span data-i18n="nav.ledgerShort">Loan &amp; Save</span></button>
         <button class="navbtn" data-view="convert"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#exchange"></use></svg><span data-i18n="nav.convert">In Taka</span></button>
       <button class="navbtn" data-view="settings"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg><span data-i18n="nav.settings">Settings</span></button>
     </nav>
@@ -430,6 +562,33 @@
         <div class="dialog-actions">
           <button class="btn" type="button" data-action="cancel" data-i18n="daily.cancel"></button>
           <button class="btn btn-danger" type="submit" data-i18n="daily.delete"></button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="payment-dialog">
+      <form novalidate>
+        <h2 class="row"><span class="dialog-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#handshake"></use></svg></span><span id="payment-title"></span></h2>
+        <p class="small" id="payment-info"></p>
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="pay-amount" data-i18n="daily.amount"></label>
+            <input class="input" id="pay-amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" required />
+          </div>
+          <div class="field">
+            <span class="label" data-i18n="daily.date"></span>
+            <input type="hidden" name="date" />
+            <div class="date-field"><button type="button" class="input date-input" id="pay-date"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calendar"></use></svg><span></span></button></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="pay-note" data-i18n="loan.note"></label>
+          <input class="input" id="pay-note" name="note" maxlength="200" autocomplete="off" />
+        </div>
+        <p class="small muted" data-i18n="loan.payHelp"></p>
+        <div class="dialog-actions">
+          <button class="btn" type="button" data-action="cancel" data-i18n="daily.cancel"></button>
+          <button class="btn btn-primary" type="submit" data-i18n="daily.save"></button>
         </div>
       </form>
     </dialog>

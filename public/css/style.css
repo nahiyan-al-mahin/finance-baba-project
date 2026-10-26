@@ -272,7 +272,7 @@ textarea {
   bottom: calc(12px + env(safe-area-inset-bottom));
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   height: var(--nav-h);
   padding: 6px;
   border-radius: 24px;
@@ -2444,4 +2444,216 @@ select.input {
 .cur-history {
   margin: 0;
   padding-left: 1.1rem;
+}
+
+/* ---------- Loans & savings ---------- */
+.bottomnav .navbtn span {
+  text-align: center;
+  line-height: 1.1;
+}
+.bottomnav .navbtn .i {
+  padding: 4px 12px;
+}
+.date-field {
+  display: flex;
+  gap: 0.4rem;
+}
+.date-field .date-input {
+  flex: 1;
+  min-width: 0;
+}
+.loan-list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+.loan-item {
+  padding: 0.85rem 0.9rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface-hi), var(--surface));
+  box-shadow: var(--hi), var(--sh-1);
+}
+.loan-item.compact {
+  padding: 0.6rem 0.75rem;
+}
+.loan-item.overdue {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+}
+.loan-item.settled {
+  opacity: 0.8;
+}
+.loan-item .meter {
+  margin: 0.6rem 0 0.35rem;
+}
+.loan-head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.loan-dir {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  color: #fff;
+  box-shadow: var(--hi), var(--sh-1);
+}
+.loan-dir.lent {
+  background: linear-gradient(150deg, #51cf66, var(--income));
+}
+.loan-dir.borrowed {
+  background: linear-gradient(150deg, #ff922b, var(--expense));
+}
+.loan-dir .i {
+  width: 20px;
+  height: 20px;
+}
+.loan-who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-wrap: anywhere;
+}
+.loan-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  white-space: nowrap;
+}
+.loan-left strong {
+  font-size: 1.1rem;
+}
+.loan-item .badge {
+  margin-left: 0.3rem;
+}
+.loan-note {
+  margin: 0.4rem 0 0;
+  font-size: 0.9rem;
+}
+.loan-payments {
+  margin-top: 0.5rem;
+}
+.loan-payments summary {
+  cursor: pointer;
+  color: var(--brand);
+  font-weight: 700;
+}
+.loan-payments ul {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+}
+.loan-payments li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 0.88rem;
+}
+.icon-btn.icon-btn-sm {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 0.4rem;
+}
+.icon-btn-sm .i {
+  width: 14px;
+  height: 14px;
+}
+.loan-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+.daily-loans #daily-loans-more {
+  margin-top: 0.75rem;
+}
+details.card > summary {
+  cursor: pointer;
+  list-style: none;
+  margin: 0;
+}
+details.card > summary::-webkit-details-marker {
+  display: none;
+}
+details.card[open] > summary {
+  margin-bottom: 0.6rem;
+}
+.savings-hero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(160deg, var(--surface-hi), var(--income-soft));
+}
+.savings-art {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  color: #fff;
+  background: linear-gradient(150deg, #f783ac, #d6336c);
+  box-shadow: var(--hi), var(--sh-2);
+}
+.savings-art .i {
+  width: 34px;
+  height: 34px;
+}
+.savings-balance {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.sv-bars {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.6rem;
+  height: 140px;
+}
+.sv-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+.sv-bar-track {
+  flex: 1;
+  width: 100%;
+  max-width: 44px;
+  display: flex;
+  align-items: flex-end;
+  border-radius: 10px;
+  background: var(--well);
+  box-shadow: var(--inset);
+  overflow: hidden;
+}
+.sv-bar-track > span {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #69db7c, var(--income));
+}
+.sv-bar.neg .sv-bar-track > span {
+  background: linear-gradient(180deg, #ffa94d, var(--expense));
+}
+.sv-bar small {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.savings-insight {
+  margin: 0.8rem 0 0;
+  padding: 0.7rem 0.85rem;
+  border-radius: 12px;
+  background: var(--well);
+  font-weight: 600;
 }
