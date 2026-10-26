@@ -17,6 +17,9 @@ const dates = require('../server/dates');
 const db = require('../server/db');
 const users = require('../server/users');
 const { todayIn, addDays } = require('../server/dates');
+const rates = require('../server/rates');
+// Fixed rates (units per USD) so tests never depend on the network.
+rates.setRatesForTests({ BDT: 120, USD: 1, EUR: 0.8, SAR: 3.75 });
 
 let server;
 let base;
@@ -293,6 +296,56 @@ test('monthly target: only on days 1-3, over-target alert and email once', async
   } finally {
     dates.setClock(null);
   }
+});
+
+test('currency: Taka by default, change is dated, old entries converted, reports still work', async () => {
+  const dina = client();
+  await dina('POST', '/auth/signup', { email: 'dina.currency@example.com', username: 'dinacur', displayName: 'Dina', password: 'dina12345', timezone: 'Asia/Dhaka' });
+  let r = await dina('GET', '/auth/me');
+  assert.equal(r.body.user.currency, 'BDT');
+  assert.deepEqual(r.body.user.currencyHistory, []);
+  await dina('POST', '/entries', { date: today, type: 'expense', amount: 1200, category: 'food', note: 'Before the move' });
+
+  r = await dina('PUT', '/account/currency', { currency: 'XYZ' });
+  assert.equal(r.body.error, 'INVALID_CURRENCY');
+  r = await dina('PUT', '/account/currency', { currency: 'usd' });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.user.currency, 'USD');
+  assert.deepEqual(r.body.user.currencyHistory, [{ date: today, from: 'BDT', to: 'USD' }]);
+
+  // New entries are in dollars; the old Taka entry is converted for totals and keeps its original amount.
+  await dina('POST', '/entries', { date: today, type: 'expense', amount: 5, category: 'food', note: 'Coffee' });
+  r = await dina('GET', '/entries');
+  assert.equal(r.body.currency, 'USD');
+  const old = r.body.entries.find((e) => e.note === 'Before the move');
+  assert.deepEqual([old.amount, old.originalAmount, old.currency, old.converted], [10, 1200, 'BDT', true]);
+  assert.equal(r.body.entries.find((e) => e.note === 'Coffee').currency, 'USD');
+  assert.equal(r.body.totals.expense, 15);
+
+  // Editing the old entry keeps it in Taka.
+  r = await dina('PUT', `/entries/${old.id}`, { date: today, type: 'expense', amount: 2400, category: 'food', note: 'Before the move' });
+  assert.equal(r.status, 200);
+  r = await dina('GET', '/entries');
+  assert.equal(r.body.totals.expense, 25);
+
+  r = await dina('GET', '/reports/summary?period=month');
+  assert.equal(r.body.currency, 'USD');
+  assert.equal(r.body.currencyChanges.length, 1);
+  r = await dina('GET', '/reports/pdf?period=month&lang=en');
+  assert.equal(r.body.subarray(0, 4).toString(), '%PDF');
+  r = await dina('GET', '/reports/pdf?period=year&lang=bn');
+  assert.equal(r.body.subarray(0, 4).toString(), '%PDF');
+
+  // Live rates for the "In Taka" page
+  r = await dina('GET', '/account/fx');
+  assert.equal(r.body.bdtPer.USD, 120);
+  assert.equal(r.body.bdtPer.BDT, 1);
+
+  // Changing back the same day leaves no history line
+  r = await dina('PUT', '/account/currency', { currency: 'BDT' });
+  assert.deepEqual(r.body.user.currencyHistory, []);
+  r = await dina('GET', '/entries');
+  assert.equal(r.body.totals.expense, 3000); // 2400 Taka + 5 dollars
 });
 
 test('cron endpoint requires the secret', async () => {

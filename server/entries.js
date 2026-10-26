@@ -5,15 +5,18 @@ const c = require('./crypto');
 const CATEGORIES = require('../shared/categories');
 const { AppError } = require('./errors');
 const { isValidDate } = require('./dates');
+const rates = require('./rates');
 
 const aad = (userId) => `entry:${userId}`;
 
 function decryptRow(row, dek) {
   const data = c.decryptJSON(dek, row.data_enc, aad(row.user_id));
-  return { id: row.id, date: row.entry_date, createdAt: row.created_at, updatedAt: row.updated_at, ...data };
+  // Entries saved before currencies existed are in Taka.
+  return { id: row.id, date: row.entry_date, createdAt: row.created_at, updatedAt: row.updated_at, currency: rates.DEFAULT, ...data };
 }
 
-function validate(body, today) {
+/** `currency` is the user's chosen currency: every entry is stored in the currency it was entered in. */
+function validate(body, today, currency = rates.DEFAULT) {
   const { date, type, category } = body || {};
   if (!isValidDate(date)) throw new AppError(400, 'INVALID_DATE');
   if (date > today) throw new AppError(400, 'FUTURE_DATE');
@@ -23,15 +26,30 @@ function validate(body, today) {
   if (!Number.isFinite(amount) || amount <= 0 || amount > 1e12) throw new AppError(400, 'INVALID_AMOUNT');
   const note = String(body.note || '').trim();
   if (note.length < 1 || note.length > 200) throw new AppError(400, 'INVALID_NOTE');
-  return { date, data: { type, amount, category, note } };
+  return { date, data: { type, amount, category, note, currency } };
 }
 
-async function listByRange(userId, dek, start, end) {
+/**
+ * Entries in a date range. With `money` ({ currency, rates }), amounts in other currencies are converted
+ * to that currency (`originalAmount` / `currency` keep what was entered), so totals can be added up.
+ */
+async function listByRange(userId, dek, start, end, money = null) {
   const rows = await db.all(
     'SELECT * FROM entries WHERE user_id = $1 AND entry_date BETWEEN $2 AND $3 ORDER BY entry_date, created_at, id',
     [userId, start, end]
   );
-  return rows.map((row) => decryptRow(row, dek));
+  const list = rows.map((row) => decryptRow(row, dek));
+  return money ? list.map((e) => toCurrency(e, money)) : list;
+}
+
+function currencyOfRow(row, dek) {
+  return decryptRow(row, dek).currency;
+}
+
+function toCurrency(e, money) {
+  if (e.currency === money.currency) return e;
+  const amount = Math.round(rates.convert(e.amount, e.currency, money.currency, money.rates) * 100) / 100;
+  return { ...e, amount, originalAmount: e.amount, converted: true };
 }
 
 function entryId(id) {
@@ -78,4 +96,4 @@ function totals(list) {
   return t;
 }
 
-module.exports = { validate, listByRange, getRow, create, update, remove, totals };
+module.exports = { validate, listByRange, toCurrency, currencyOfRow, getRow, create, update, remove, totals };

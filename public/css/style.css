@@ -272,7 +272,7 @@ textarea {
   bottom: calc(12px + env(safe-area-inset-bottom));
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   height: var(--nav-h);
   padding: 6px;
   border-radius: 24px;
@@ -2369,4 +2369,79 @@ body.gated {
   border: 2px dashed var(--border);
   border-radius: var(--wobble-2);
   background: transparent;
+}
+
+/* ---------- Currency: converted amounts, "In Taka" page ---------- */
+.entry-orig {
+  font-weight: 700;
+}
+select.input {
+  appearance: none;
+  padding-right: 2.2rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+}
+.fx-rate-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.fx-rate-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  color: #fff;
+  background: linear-gradient(150deg, var(--brand-light), var(--brand-strong));
+  box-shadow: var(--hi), var(--sh-2);
+}
+.fx-rate-icon .i {
+  width: 26px;
+  height: 26px;
+}
+.fx-rate {
+  font-size: 1.45rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.fx-rate.small {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.fx-rate-card p {
+  margin: 0.2rem 0 0;
+}
+.fx-result {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  background: var(--well);
+  box-shadow: var(--inset);
+}
+.fx-result strong {
+  font-size: 1.6rem;
+}
+.fx-row {
+  border-bottom: 1px dashed var(--border);
+  padding: 0.55rem 0;
+}
+.fx-pair {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+.cur-history {
+  margin: 0;
+  padding-left: 1.1rem;
 }

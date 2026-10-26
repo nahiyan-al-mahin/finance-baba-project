@@ -10,14 +10,23 @@ const { mail } = require('./mail');
 const { AppError } = require('./errors');
 const { periodRange } = require('./dates');
 const { TARGET_EDIT_DAYS } = require('./config');
+const rates = require('./rates');
 
 const aad = (userId, month) => `target:${userId}:${month}`;
 const monthOf = (date) => date.slice(0, 7);
 const canEditOn = (today) => Number(today.slice(8)) <= TARGET_EDIT_DAYS;
 
-async function read(userId, dek, month) {
+async function readRaw(userId, dek, month) {
   const row = await db.one('SELECT data_enc FROM targets WHERE user_id = $1 AND month = $2', [userId, month]);
-  return row ? c.decryptJSON(dek, row.data_enc, aad(userId, month)) : null;
+  return row ? { currency: rates.DEFAULT, ...c.decryptJSON(dek, row.data_enc, aad(userId, month)) } : null;
+}
+
+/** The month's target, with its amount in the user's display currency (`money`) when one is given. */
+async function read(userId, dek, month, money = null) {
+  const target = await readRaw(userId, dek, month);
+  if (!target || !money || target.currency === money.currency) return target;
+  const amount = Math.round(rates.convert(target.amount, target.currency, money.currency, money.rates) * 100) / 100;
+  return { ...target, amount, originalAmount: target.amount, originalCurrency: target.currency, currency: money.currency };
 }
 
 function write(userId, dek, month, data) {
@@ -28,19 +37,22 @@ function write(userId, dek, month, data) {
   );
 }
 
-async function monthSpent(userId, dek, month) {
+async function monthSpent(userId, dek, month, money) {
   const { start, end } = periodRange('month', `${month}-01`);
-  return entries.totals(await entries.listByRange(userId, dek, start, end)).expense;
+  return entries.totals(await entries.listByRange(userId, dek, start, end, money)).expense;
 }
 
 /** Status of the target for the month containing `today`. */
-async function status({ userId, dek, today }) {
+async function status({ userId, dek, today, money }) {
   const month = monthOf(today);
-  const target = await read(userId, dek, month);
-  const spent = await monthSpent(userId, dek, month);
+  const target = await read(userId, dek, month, money);
+  const spent = await monthSpent(userId, dek, month, money);
   return {
     month,
+    currency: money ? money.currency : rates.DEFAULT,
     amount: target ? target.amount : null,
+    originalAmount: target?.originalAmount ?? null,
+    originalCurrency: target?.originalCurrency ?? null,
     spent,
     over: !!target && spent > target.amount,
     canEdit: canEditOn(today),
@@ -53,9 +65,9 @@ async function set(ctx, amountInput) {
   const amount = Math.round(Number(amountInput) * 100) / 100;
   if (!Number.isFinite(amount) || amount <= 0 || amount > 1e12) throw new AppError(400, 'INVALID_AMOUNT');
   const month = monthOf(ctx.today);
-  const spent = await monthSpent(ctx.userId, ctx.dek, month);
+  const spent = await monthSpent(ctx.userId, ctx.dek, month, ctx.money);
   // Already over the new amount? Treat it as notified so we don't email about it right away.
-  await write(ctx.userId, ctx.dek, month, { amount, notifiedOver: spent > amount });
+  await write(ctx.userId, ctx.dek, month, { amount, currency: ctx.money ? ctx.money.currency : rates.DEFAULT, notifiedOver: spent > amount });
   return status(ctx);
 }
 
@@ -70,28 +82,30 @@ async function remove(ctx) {
  * emailed (if they have a confirmed address) and `newlyOver` is returned so the app can show an alert.
  */
 async function checkAfterChange(ctx, month) {
-  const target = await read(ctx.userId, ctx.dek, month);
-  if (!target) return null;
-  const spent = await monthSpent(ctx.userId, ctx.dek, month);
+  const stored = await readRaw(ctx.userId, ctx.dek, month);
+  if (!stored) return null;
+  const target = await read(ctx.userId, ctx.dek, month, ctx.money);
+  const spent = await monthSpent(ctx.userId, ctx.dek, month, ctx.money);
   const over = spent > target.amount;
+  const currency = ctx.money ? ctx.money.currency : rates.DEFAULT;
   let newlyOver = false;
-  if (over && !target.notifiedOver) {
+  if (over && !stored.notifiedOver) {
     newlyOver = true;
-    await write(ctx.userId, ctx.dek, month, { ...target, notifiedOver: true });
+    await write(ctx.userId, ctx.dek, month, { ...stored, notifiedOver: true });
     const row = await users.findById(ctx.userId);
     const to = users.getEmail(row);
     if (to && mail.enabled()) {
       const name = users.getProfile(row, ctx.dek).displayName;
       // Email problems must never block saving the entry.
-      await mail.send({ to, ...emails.overTarget({ lang: row.lang, name, month, target: target.amount, spent }) }).catch((err) => {
+      await mail.send({ to, ...emails.overTarget({ lang: row.lang, name, month, target: target.amount, spent, currency }) }).catch((err) => {
         console.error('[finance-baba] Over-target email failed:', err.message);
       });
     }
-  } else if (!over && target.notifiedOver) {
+  } else if (!over && stored.notifiedOver) {
     // Back under (e.g. an entry was deleted): allow a new alert if it goes over again.
-    await write(ctx.userId, ctx.dek, month, { ...target, notifiedOver: false });
+    await write(ctx.userId, ctx.dek, month, { ...stored, notifiedOver: false });
   }
-  return { month, amount: target.amount, spent, over, newlyOver };
+  return { month, currency, amount: target.amount, spent, over, newlyOver };
 }
 
 module.exports = { status, set, remove, checkAfterChange, read };

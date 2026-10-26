@@ -34,11 +34,11 @@ function elapsedDays(range, today) {
   return eachDay(range.start, end).length;
 }
 
-async function summarize({ userId, dek, today }, period, anchor) {
+async function summarize({ userId, dek, today, money = null, currencyHistory = [] }, period, anchor) {
   const range = periodRange(period, anchor);
-  const list = await entries.listByRange(userId, dek, range.start, range.end);
+  const list = await entries.listByRange(userId, dek, range.start, range.end, money);
   const prevRange = periodRange(period, previousAnchor(period, anchor));
-  const prevTotals = entries.totals(await entries.listByRange(userId, dek, prevRange.start, prevRange.end));
+  const prevTotals = entries.totals(await entries.listByRange(userId, dek, prevRange.start, prevRange.end, money));
   const totals = entries.totals(list);
   const days = elapsedDays(range, today);
   const expenses = list.filter((e) => e.type === 'expense');
@@ -47,6 +47,10 @@ async function summarize({ userId, dek, today }, period, anchor) {
   const busiest = s.filter((b) => b.expense > 0).sort((a, b) => b.expense - a.expense)[0] || null;
 
   return {
+    currency: money ? money.currency : 'BDT',
+    // Currency changes up to the end of this period, so reports can say when the currency changed.
+    currencyChanges: currencyHistory.filter((h) => h.date <= range.end),
+    ratesSource: money && money.rates ? { source: money.rates.source, updatedAt: money.rates.updatedAt, approximate: !!money.rates.approximate } : null,
     period,
     range,
     today,

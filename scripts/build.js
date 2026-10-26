@@ -8,6 +8,7 @@ const ROOT = path.join(__dirname, '..');
 const copies = [
   ['node_modules/chart.js/dist/chart.umd.min.js', 'public/vendor/chart.js/chart.umd.min.js'],
   ['shared/categories.js', 'public/shared/categories.js'],
+  ['shared/currencies.js', 'public/shared/currencies.js'],
 ];
 
 for (const [from, to] of copies) {

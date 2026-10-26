@@ -12,6 +12,7 @@ const { mail } = require('./mail');
 const { summarize } = require('./reports/summary');
 const { reportBuffer } = require('./reports/pdf');
 const { todayIn, previousMonth } = require('./dates');
+const rates = require('./rates');
 
 const TIME_BUDGET_MS = 45 * 1000; // stay well inside the serverless time limit; the rest goes out on the next run
 
@@ -33,13 +34,14 @@ async function sendOne(row) {
 
   try {
     const dek = users.reportKey(row);
-    const ctx = { userId: row.id, dek, today };
+    const profile = users.getProfile(row, dek);
+    const { currency, history } = users.currencyOf(profile);
+    const ctx = { userId: row.id, dek, today, currencyHistory: history, money: { currency, rates: await rates.getRates() } };
     const summary = await summarize(ctx, 'month', `${month}-01`);
     if (!summary.entries.length) return 'empty'; // nothing logged: don't send an empty report
-    const profile = users.getProfile(row, dek);
-    const target = await targets.read(row.id, dek, month);
+    const target = await targets.read(row.id, dek, month, ctx.money);
     const pdf = await reportBuffer({ lang: row.lang, summary, profile, publicId: row.public_id, target: target?.amount });
-    const message = emails.monthlyReport({ lang: row.lang, name: profile.displayName, month, totals: summary.totals, target: target?.amount });
+    const message = emails.monthlyReport({ lang: row.lang, name: profile.displayName, month, totals: summary.totals, target: target?.amount, currency });
     await mail.send({
       to: users.getEmail(row),
       ...message,

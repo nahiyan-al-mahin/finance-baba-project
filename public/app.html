@@ -17,6 +17,7 @@
       <nav class="topnav" aria-label="Main">
         <button class="navbtn" data-view="daily"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calendar"></use></svg><span data-i18n="nav.daily">Daily</span></button>
         <button class="navbtn" data-view="reports"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chart"></use></svg><span data-i18n="nav.reports">Reports</span></button>
+        <button class="navbtn" data-view="convert"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#exchange"></use></svg><span data-i18n="nav.convert">In Taka</span></button>
         <button class="navbtn" data-view="settings"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg><span data-i18n="nav.settings">Settings</span></button>
       </nav>
       <button class="icon-btn" type="button" data-action="toggle-lang" data-i18n="toggle.lang">বাংলা</button>
@@ -37,6 +38,7 @@
         <nav class="card side-nav" aria-label="Main">
           <button class="navbtn" data-view="daily"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calendar"></use></svg><span data-i18n="nav.daily">Daily</span></button>
           <button class="navbtn" data-view="reports"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chart"></use></svg><span data-i18n="nav.reports">Reports</span></button>
+        <button class="navbtn" data-view="convert"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#exchange"></use></svg><span data-i18n="nav.convert">In Taka</span></button>
           <button class="navbtn" data-view="settings"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg><span data-i18n="nav.settings">Settings</span></button>
         </nav>
 
@@ -76,9 +78,9 @@
         </div>
 
         <div class="grid grid-3">
-          <div class="card stat expense"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#arrow-out"></use></svg></span><div class="stat-label" data-i18n="daily.spent"></div><div class="stat-value" id="day-expense">৳0</div></div>
-          <div class="card stat income"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#arrow-in"></use></svg></span><div class="stat-label" data-i18n="daily.earned"></div><div class="stat-value" id="day-income">৳0</div></div>
-          <div class="card stat net"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#wallet"></use></svg></span><div class="stat-label" data-i18n="daily.balance"></div><div class="stat-value" id="day-net">৳0</div></div>
+          <div class="card stat expense"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#arrow-out"></use></svg></span><div class="stat-label" data-i18n="daily.spent"></div><div class="stat-value" id="day-expense">0</div></div>
+          <div class="card stat income"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#arrow-in"></use></svg></span><div class="stat-label" data-i18n="daily.earned"></div><div class="stat-value" id="day-income">0</div></div>
+          <div class="card stat net"><span class="stat-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#wallet"></use></svg></span><div class="stat-label" data-i18n="daily.balance"></div><div class="stat-value" id="day-net">0</div></div>
         </div>
 
         <div class="card target-card" id="target-card">
@@ -120,7 +122,7 @@
           <ul class="entry-list" id="entry-list"></ul>
           <div class="day-total">
             <span id="day-total-label"></span>
-            <span class="num" id="day-total">৳0</span>
+            <span class="num" id="day-total">0</span>
           </div>
         </div>
       </section>
@@ -183,6 +185,47 @@
         </div>
       </section>
 
+      <!-- ================= IN TAKA (currency converter) ================= -->
+      <section id="view-convert" class="stack" hidden>
+        <div>
+          <h1 data-i18n="fx.title">Your money in Taka</h1>
+          <p class="muted small" data-i18n="fx.lead"></p>
+        </div>
+
+        <div class="card fx-rate-card">
+          <span class="fx-rate-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#exchange"></use></svg></span>
+          <div>
+            <div class="fx-rate" id="fx-rate">–</div>
+            <p class="small muted" id="fx-updated"></p>
+          </div>
+        </div>
+        <div class="alert" id="fx-approx" hidden><span data-i18n="fx.approx"></span></div>
+
+        <div class="card">
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calculator"></use></svg></span><span data-i18n="fx.converter">Converter</span></h2>
+          <div class="form-grid">
+            <div class="field">
+              <label for="fx-amount" data-i18n="fx.amount">Amount</label>
+              <input class="input" id="fx-amount" type="number" inputmode="decimal" min="0" step="0.01" value="1" />
+            </div>
+            <div class="field">
+              <label for="fx-from" data-i18n="fx.from">Currency</label>
+              <select class="input" id="fx-from"></select>
+            </div>
+          </div>
+          <div class="fx-result">
+            <span class="small muted" data-i18n="fx.result">In Bangladeshi Taka</span>
+            <strong class="num" id="fx-result">–</strong>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#coins"></use></svg></span><span data-i18n="fx.totals">Your totals in Taka</span></h2>
+          <div id="fx-totals"></div>
+          <p class="small muted" data-i18n="fx.note"></p>
+        </div>
+      </section>
+
       <!-- ================= SETTINGS ================= -->
       <section id="view-settings" class="stack" hidden>
         <form class="card" id="profile-form" novalidate>
@@ -212,6 +255,18 @@
               <button type="button" data-theme-choice="sketch"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#sketch"></use></svg> <span data-i18n="set.sketch">Sketchbook</span></button>
             </div>
           </div>
+        </div>
+
+        <div class="card" id="currency-card">
+          <h2 class="card-title"><span class="title-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#coins"></use></svg></span><span data-i18n="cur.title">Currency</span></h2>
+          <p class="small muted" data-i18n="cur.help"></p>
+          <div class="field">
+            <label for="cur-select" data-i18n="cur.label">Your currency</label>
+            <select class="input" id="cur-select"></select>
+          </div>
+          <button class="btn" type="button" id="cur-save" data-i18n="cur.save">Change currency</button>
+          <h3 class="small" style="margin: 1rem 0 0.35rem" data-i18n="cur.history">Currency history</h3>
+          <ul class="small muted cur-history" id="cur-history"></ul>
         </div>
 
         <form class="card" id="password-form" novalidate>
@@ -300,6 +355,7 @@
     <nav class="bottomnav" aria-label="Main">
       <button class="navbtn" data-view="daily"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#calendar"></use></svg><span data-i18n="nav.daily">Daily</span></button>
       <button class="navbtn" data-view="reports"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#chart"></use></svg><span data-i18n="nav.reports">Reports</span></button>
+        <button class="navbtn" data-view="convert"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#exchange"></use></svg><span data-i18n="nav.convert">In Taka</span></button>
       <button class="navbtn" data-view="settings"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg><span data-i18n="nav.settings">Settings</span></button>
     </nav>
 
@@ -378,12 +434,23 @@
       </form>
     </dialog>
 
+    <dialog id="currency-dialog">
+      <form novalidate>
+        <h2 class="row"><span class="dialog-icon"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#coins"></use></svg></span><span data-i18n="cur.confirmTitle"></span></h2>
+        <p class="small" id="currency-confirm-text"></p>
+        <div class="dialog-actions">
+          <button class="btn" type="button" data-action="cancel" data-i18n="daily.cancel"></button>
+          <button class="btn btn-primary" type="submit" data-i18n="cur.confirmBtn"></button>
+        </div>
+      </form>
+    </dialog>
+
     <dialog id="target-dialog">
       <form novalidate>
         <h2 class="row"><span class="dialog-icon target"><svg class="i" aria-hidden="true"><use href="/img/icons.svg#target"></use></svg></span><span id="target-dialog-title"></span></h2>
         <p class="small muted" data-i18n="tgt.help"></p>
         <div class="field">
-          <label for="tg-amount" data-i18n="tgt.amount">Maximum to spend this month (৳)</label>
+          <label for="tg-amount" data-i18n="tgt.amount">Maximum to spend this month</label>
           <input class="input" id="tg-amount" name="amount" type="number" inputmode="decimal" min="1" step="1" required />
         </div>
         <div class="dialog-actions">
@@ -422,6 +489,7 @@
     </dialog>
 
     <script src="/shared/categories.js"></script>
+    <script src="/shared/currencies.js"></script>
     <script src="/vendor/chart.js/chart.umd.min.js"></script>
     <script type="module" src="/js/app.js"></script>
   </body>

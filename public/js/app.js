@@ -1,5 +1,5 @@
 import { get, post, put, patch, del } from './api.js';
-import { t, fmt, setLang, getLang, onLangChange, applyI18n, categoryLabel, categoryTile } from './i18n.js';
+import { t, fmt, setLang, getLang, onLangChange, applyI18n, categoryLabel, categoryTile, setCurrency, currencySymbol } from './i18n.js';
 import { $, $$, initChrome, toast, errorMessage, showFormError, busy, openDialog, dialogAction, escapeHtml, setTheme, getTheme } from './ui.js';
 import { initReports, loadReports } from './reports.js';
 import { startOnboarding } from './onboarding.js';
@@ -9,6 +9,7 @@ import { addDays, openCalendar, renderWeekStrip, invalidateMarks } from './calen
 import { initSidebar, refreshSidebar } from './sidebar.js';
 import { initTarget, loadTarget, handleTargetUpdate, renderTarget } from './target.js';
 import { renderEmailWidget } from './email.js';
+import { initConvert, loadConvert, renderCurrencyCard } from './convert.js';
 
 const state = { user: null, today: null, date: null, unlockedUntil: 0, view: 'daily', entries: [] };
 // Shared with the email widgets (Settings card and the confirm-email gate).
@@ -16,8 +17,16 @@ const emailState = { user: null, pendingEmail: null, emailEnabled: false };
 const widgets = [];
 
 function setUser(user) {
+  const changed = state.user && state.user.currency !== user.currency;
   state.user = user;
   emailState.user = user;
+  setCurrency(user.currency);
+  // Totals everywhere are shown in the chosen currency: redraw them after a change.
+  if (changed) {
+    loadDay().catch(handleError);
+    loadTarget().catch(handleError);
+    refreshSidebar();
+  }
 }
 
 // ---------- helpers ----------
@@ -68,7 +77,7 @@ async function withUnlock(fn) {
 
 // ---------- navigation ----------
 function showView(view) {
-  if (!['daily', 'reports', 'settings'].includes(view)) view = 'daily';
+  if (!['daily', 'reports', 'convert', 'settings'].includes(view)) view = 'daily';
   state.view = view;
   $$('main > section').forEach((s) => (s.hidden = s.id !== `view-${view}`));
   $$('[data-view]').forEach((b) => (b.getAttribute('data-view') === view ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current')));
@@ -76,6 +85,7 @@ function showView(view) {
   applyI18n();
   if (view === 'reports') loadReports().catch(handleError);
   if (view === 'settings') renderSettings();
+  if (view === 'convert') loadConvert().catch(handleError);
   if (view === 'daily' && state.user) loadWarnings().catch(() => {});
   window.scrollTo(0, 0);
 }
@@ -120,7 +130,9 @@ function renderEntries(totals) {
         ${categoryTile(e.type, e.category, 'entry-icon')}
         <div class="entry-body">
           <div class="entry-note">${escapeHtml(e.note)}</div>
-          <div class="entry-meta">${escapeHtml(categoryLabel(e.type, e.category))} · ${fmt.time(e.createdAt)}</div>
+          <div class="entry-meta">${escapeHtml(categoryLabel(e.type, e.category))} · ${fmt.time(e.createdAt)}${
+            e.converted ? ` · <span class="entry-orig">${escapeHtml(t('cur.original', { amount: fmt.money(e.originalAmount, e.currency) }))}</span>` : ''
+          }</div>
         </div>
         <span class="entry-amount ${e.type}">${e.type === 'income' ? '+' : '−'}${fmt.money(e.amount)}</span>
         <span class="entry-actions">
@@ -218,7 +230,9 @@ async function editEntry(entry) {
         const picker = $('#ed-category');
         fillCategories(picker, entry.type, entry.category);
         f.note.value = entry.note;
-        f.amount.value = entry.amount;
+        // Edit in the currency the entry was saved in.
+        f.amount.value = entry.converted ? entry.originalAmount : entry.amount;
+        $('label[for=ed-amount]', dialog).textContent = t('daily.amount', { cur: currencySymbol(entry.currency) });
         const setDate = (d) => {
           f.date.value = d;
           $('#ed-date-label').textContent = fmt.date(d, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
@@ -247,7 +261,7 @@ async function editEntry(entry) {
 async function deleteEntry(entry) {
   const dialog = $('#confirm-dialog');
   const done = await dialogAction(dialog, () => withUnlock(() => del(`/entries/${entry.id}`)), {
-    onOpen: () => ($('#confirm-text').textContent = `${t('daily.confirmDelete')} (${entry.note} — ${fmt.money(entry.amount)})`),
+    onOpen: () => ($('#confirm-text').textContent = `${t('daily.confirmDelete')} (${entry.note} — ${fmt.money(entry.converted ? entry.originalAmount : entry.amount, entry.currency)})`),
   }).catch(handleError);
   if (done) {
     toast(t('daily.deleted'));
@@ -288,6 +302,7 @@ function renderSettings() {
   $$('#theme-toggle [data-theme-choice]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.themeChoice === getTheme())));
   $('#reports-toggle').checked = !!state.user.reportsEnabled;
   widgets.forEach((w) => w.redraw());
+  renderCurrencyCard();
   renderGoogleCard();
 }
 
@@ -414,6 +429,7 @@ async function boot() {
   initSettings();
   initSidebar({ getUser: () => state.user, getToday: () => state.today, onError: handleError });
   initTarget({ onError: handleError, onTargetChange: refreshSidebar });
+  initConvert({ getUser: () => state.user, getToday: () => state.today, onUser: setUser, onError: handleError });
 
   const onVerified = () => {
     updateEmailGate();
@@ -445,6 +461,7 @@ async function boot() {
     updateAddFormType($('#add-form').elements.type.value);
     if (state.view === 'reports') loadReports().catch(handleError);
     if (state.view === 'settings') renderSettings();
+    if (state.view === 'convert') loadConvert().catch(handleError);
     loadWarnings().catch(() => {});
   });
 

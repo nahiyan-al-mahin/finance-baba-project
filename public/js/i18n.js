@@ -56,7 +56,7 @@ const dict = {
     'tgt.locked': 'Locked for this month',
     'tgt.editable': 'You can change it until {date}',
     'tgt.dialogTitle': 'Target for {month}',
-    'tgt.amount': 'Maximum to spend this month (৳)',
+    'tgt.amount': 'Maximum to spend this month ({cur})',
     'tgt.help': 'You can set or change the target only on the first 3 days of the month. After that it is locked.',
     'tgt.remove': 'Remove target',
     'tgt.saved': 'Target saved',
@@ -149,7 +149,7 @@ const dict = {
     'daily.occasion': 'What was it for?',
     'daily.occasionPhExpense': 'e.g. Lunch with friends, rickshaw to office',
     'daily.occasionPhIncome': 'e.g. October salary, tuition fee received',
-    'daily.amount': 'Amount (৳)',
+    'daily.amount': 'Amount ({cur})',
     'daily.category': 'Category',
     'daily.add': 'Add',
     'daily.listTitle': 'Entries',
@@ -311,6 +311,37 @@ const dict = {
     'err.UNAUTHENTICATED': 'Your session ended. Please log in again.',
     'err.INVALID_MESSAGE': 'Message must be 5–500 characters.',
     'err.NETWORK': 'Could not reach the server. Check your connection.',
+    'nav.convert': 'In Taka',
+    'cur.title': 'Currency',
+    'cur.help': 'Pick the currency you spend in. New entries are saved in it and all totals, targets and reports are shown in it. Your old entries are kept exactly as they were and converted at the live rate.',
+    'cur.label': 'Your currency',
+    'cur.save': 'Change currency',
+    'cur.confirmTitle': 'Change your currency?',
+    'cur.confirmBody': 'From today ({date}) new entries will be in {to}. Earlier entries stay in {from} and are converted for totals. This change is written in your reports.',
+    'cur.confirmBtn': 'Yes, change',
+    'cur.changed': 'Currency changed to {code}.',
+    'cur.history': 'Currency history',
+    'cur.historyItem': '{date}: {from} → {to}',
+    'cur.historyNone': 'You have always used {code}.',
+    'cur.same': 'This is already your currency.',
+    'cur.original': 'entered as {amount}',
+    'fx.title': 'Your money in Taka',
+    'fx.lead': 'See what your amounts are worth in Bangladeshi Taka at today\'s exchange rate.',
+    'fx.rate': '1 {code} = {bdt}',
+    'fx.rateBdt': 'Your currency is Bangladeshi Taka, so nothing needs converting. Pick another currency below to try the converter.',
+    'fx.updated': 'Rate updated {time} · source: {source}',
+    'fx.approx': 'Live rates could not be loaded right now, so these are approximate.',
+    'fx.converter': 'Converter',
+    'fx.amount': 'Amount',
+    'fx.from': 'Currency',
+    'fx.result': 'In Bangladeshi Taka',
+    'fx.totals': 'Your totals in Taka',
+    'fx.today': 'Spent today',
+    'fx.month': 'Spent this month',
+    'fx.monthIncome': 'Earned this month',
+    'fx.year': 'Spent this year',
+    'fx.note': 'Mid-market rate for information only — banks and money changers charge a little more.',
+    'err.INVALID_CURRENCY': 'That currency is not supported.',
     'err.generic': 'Something went wrong. Please try again.',
   },
   bn: {
@@ -367,7 +398,7 @@ const dict = {
     'tgt.locked': 'এই মাসের জন্য লক করা',
     'tgt.editable': '{date} পর্যন্ত পরিবর্তন করা যাবে',
     'tgt.dialogTitle': '{month}-এর লক্ষ্য',
-    'tgt.amount': 'এই মাসে সর্বোচ্চ খরচ (৳)',
+    'tgt.amount': 'এই মাসে সর্বোচ্চ খরচ ({cur})',
     'tgt.help': 'শুধু মাসের প্রথম ৩ দিনে লক্ষ্য ঠিক বা পরিবর্তন করা যায়। এরপর এটি লক হয়ে যায়।',
     'tgt.remove': 'লক্ষ্য মুছুন',
     'tgt.saved': 'লক্ষ্য সংরক্ষিত হয়েছে',
@@ -459,7 +490,7 @@ const dict = {
     'daily.occasion': 'কিসের জন্য?',
     'daily.occasionPhExpense': 'যেমন: বন্ধুদের সাথে দুপুরের খাবার, অফিসে রিকশা',
     'daily.occasionPhIncome': 'যেমন: অক্টোবরের বেতন, টিউশনির টাকা',
-    'daily.amount': 'পরিমাণ (৳)',
+    'daily.amount': 'পরিমাণ ({cur})',
     'daily.category': 'খাত',
     'daily.add': 'যোগ করুন',
     'daily.listTitle': 'এন্ট্রিসমূহ',
@@ -614,6 +645,37 @@ const dict = {
     'err.UNAUTHENTICATED': 'সেশন শেষ হয়েছে। আবার লগ ইন করুন।',
     'err.INVALID_MESSAGE': 'বার্তা ৫–৫০০ অক্ষরের হতে হবে।',
     'err.NETWORK': 'সার্ভারে পৌঁছানো যাচ্ছে না। ইন্টারনেট সংযোগ দেখুন।',
+    'nav.convert': 'টাকায়',
+    'cur.title': 'মুদ্রা',
+    'cur.help': 'যে মুদ্রায় খরচ করেন সেটি বেছে নিন। নতুন এন্ট্রি এই মুদ্রায় সংরক্ষিত হবে, আর সব হিসাব, লক্ষ্য ও রিপোর্ট এতে দেখাবে। পুরোনো এন্ট্রি যেমন ছিল তেমনই থাকবে এবং লাইভ রেটে রূপান্তর হবে।',
+    'cur.label': 'আপনার মুদ্রা',
+    'cur.save': 'মুদ্রা পরিবর্তন করুন',
+    'cur.confirmTitle': 'মুদ্রা পরিবর্তন করবেন?',
+    'cur.confirmBody': 'আজ ({date}) থেকে নতুন এন্ট্রি {to}-এ হবে। আগের এন্ট্রি {from}-এ থাকবে এবং হিসাবের জন্য রূপান্তর হবে। এই পরিবর্তন আপনার রিপোর্টে লেখা থাকবে।',
+    'cur.confirmBtn': 'হ্যাঁ, পরিবর্তন করুন',
+    'cur.changed': 'মুদ্রা {code} করা হয়েছে।',
+    'cur.history': 'মুদ্রা পরিবর্তনের ইতিহাস',
+    'cur.historyItem': '{date}: {from} → {to}',
+    'cur.historyNone': 'আপনি সবসময় {code} ব্যবহার করেছেন।',
+    'cur.same': 'এটি ইতিমধ্যে আপনার মুদ্রা।',
+    'cur.original': 'মূল {amount}',
+    'fx.title': 'টাকায় আপনার হিসাব',
+    'fx.lead': 'আজকের বিনিময় হারে আপনার টাকার পরিমাণ বাংলাদেশি টাকায় কত তা দেখুন।',
+    'fx.rate': '১ {code} = {bdt}',
+    'fx.rateBdt': 'আপনার মুদ্রা বাংলাদেশি টাকা, তাই রূপান্তরের দরকার নেই। কনভার্টার ব্যবহার করতে নিচে অন্য মুদ্রা বেছে নিন।',
+    'fx.updated': 'রেট হালনাগাদ {time} · উৎস: {source}',
+    'fx.approx': 'এই মুহূর্তে লাইভ রেট আনা যায়নি, তাই এগুলো আনুমানিক।',
+    'fx.converter': 'কনভার্টার',
+    'fx.amount': 'পরিমাণ',
+    'fx.from': 'মুদ্রা',
+    'fx.result': 'বাংলাদেশি টাকায়',
+    'fx.totals': 'টাকায় আপনার মোট হিসাব',
+    'fx.today': 'আজকের খরচ',
+    'fx.month': 'এই মাসের খরচ',
+    'fx.monthIncome': 'এই মাসের আয়',
+    'fx.year': 'এই বছরের খরচ',
+    'fx.note': 'শুধু তথ্যের জন্য মধ্যবাজার রেট — ব্যাংক ও মানি চেঞ্জার একটু বেশি নেয়।',
+    'err.INVALID_CURRENCY': 'এই মুদ্রা সমর্থিত নয়।',
     'err.generic': 'কিছু একটা ভুল হয়েছে। আবার চেষ্টা করুন।',
   },
 };
@@ -626,6 +688,8 @@ export function getLang() {
 
 export function t(key, vars = {}) {
   const str = dict[getLang()][key] ?? dict.en[key] ?? key;
+  // {cur} is always the user's currency symbol (used in amount labels).
+  vars = { cur: currencySymbol(), ...vars };
   return str.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? `{${k}}`));
 }
 
@@ -657,10 +721,41 @@ const locale = () => (getLang() === 'bn' ? 'bn-BD' : 'en-US');
 const dateLocale = () => (getLang() === 'bn' ? 'bn-BD' : 'en-GB');
 const asDate = (str) => new Date(`${str}T00:00:00Z`);
 
+// ---- Currency (the user's choice; Bangladeshi Taka by default)
+let currency = 'BDT';
+export const getCurrency = () => currency;
+export function setCurrency(code) {
+  currency = code || 'BDT';
+  applyI18n();
+}
+
+export function currencySymbol(code = currency) {
+  if (code === 'BDT') return '৳';
+  try {
+    const part = new Intl.NumberFormat('en-US', { style: 'currency', currency: code, currencyDisplay: 'narrowSymbol' })
+      .formatToParts(0)
+      .find((p) => p.type === 'currency');
+    // A bare letter code (e.g. "SAR") reads better with a space after it.
+    return part ? part.value : code;
+  } catch {
+    return code;
+  }
+}
+
+export function currencyName(code) {
+  try {
+    return new Intl.DisplayNames([getLang() === 'bn' ? 'bn' : 'en'], { type: 'currency' }).of(code);
+  } catch {
+    return code;
+  }
+}
+
 export const fmt = {
-  money(n) {
-    const abs = new Intl.NumberFormat(locale(), { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Math.abs(n));
-    return `${n < 0 ? '−' : ''}৳${abs}`;
+  money(n, code = currency) {
+    const digits = code === 'JPY' || code === 'KRW' || code === 'IDR' ? 0 : 2;
+    const abs = new Intl.NumberFormat(locale(), { minimumFractionDigits: 0, maximumFractionDigits: digits }).format(Math.abs(n));
+    const sym = currencySymbol(code);
+    return `${n < 0 ? '−' : ''}${sym}${/^[A-Za-z]{2,}$/.test(sym) ? ' ' : ''}${abs}`;
   },
   number(n) {
     return new Intl.NumberFormat(locale()).format(n);

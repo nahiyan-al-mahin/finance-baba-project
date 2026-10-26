@@ -11,6 +11,8 @@ A mobile-friendly personal finance diary. Users log what they spend and what the
 | Past days locked | Adding, editing or deleting entries on a day that has passed needs the password again. Editing then stays unlocked for 5 minutes. |
 | Analysis | Week (Saturday to Friday), month and year views with charts, category breakdown, comparison with the previous period, savings rate and insights. |
 | Monthly target | Set a spending limit for the month on **days 1–3 only** (then it locks). Crossing it shows an alert, a system notification and sends an email, once per month. |
+| Currency | Bangladeshi Taka (৳) by default. Pick another currency in **Settings → Currency**: new entries are saved in it and every total, target and report is shown in it. Older entries keep their original amount and are converted at the live rate. The change and its date are written into PDF reports. |
+| In Taka | A tab with the live rate of your currency to Taka, a converter, and your day / month / year totals in Taka. Rates come from [ExchangeRate-API](https://www.exchangerate-api.com) (free, no key; Google Finance has no public API), with jsDelivr's currency-api as a backup, cached 6 hours in the database. |
 | Email | Every account confirms its own email with a 6-digit code (or via Google). Log in with username **or** email. |
 | Month-end report | When a month ends, its full PDF is emailed automatically (can be switched off). Monthly and yearly PDFs can still be downloaded any time. |
 | PDF | Monthly and yearly statements with summary, category bars, day-by-day or month-by-month totals and every transaction, in English or Bangla. |
@@ -111,6 +113,7 @@ server/
   routes/             auth, entries (+ warnings), reports, admin
   reports/            summary (analysis) and pdf (PDFKit statement)
 shared/categories.js  Categories with English and Bangla labels (browser + server)
+shared/currencies.js  Supported currencies (browser + server)
 public/               index.html (login), app.html (user app), admin.html
   css/style.css       Light and dark themes, responsive layout
   js/                 i18n, api, ui helpers, app, reports, onboarding, admin

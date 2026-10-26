@@ -52,9 +52,9 @@ const T = {
 const L = (lang) => T[lang] || T.en;
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-function money(n, lang) {
+function money(n, lang, currency = 'BDT') {
   const num = new Intl.NumberFormat(lang === 'bn' ? 'bn-BD' : 'en-US', { maximumFractionDigits: 2 }).format(Math.abs(n));
-  return `${n < 0 ? '−' : ''}৳${num}`;
+  return `${n < 0 ? '−' : ''}${currency === 'BDT' ? '৳' : `${currency} `}${num}`;
 }
 
 function monthName(ym, lang) {
@@ -92,37 +92,37 @@ function verificationCode({ lang, name, code }) {
   };
 }
 
-function overTarget({ lang, name, month, target, spent }) {
+function overTarget({ lang, name, month, target, spent, currency = 'BDT' }) {
   const t = L(lang);
   const m = monthName(month, lang);
   return {
     subject: t.overSubject,
-    text: `${t.hello(name)}\n\n${t.overIntro(m)}\n${t.target}: ${money(target, lang)}\n${t.spent}: ${money(spent, lang)}\n${t.over}: ${money(spent - target, lang)}\n\n${t.overTip}\n${APP_URL}`,
+    text: `${t.hello(name)}\n\n${t.overIntro(m)}\n${t.target}: ${money(target, lang, currency)}\n${t.spent}: ${money(spent, lang, currency)}\n${t.over}: ${money(spent - target, lang, currency)}\n\n${t.overTip}\n${APP_URL}`,
     html: layout(
       lang,
       `<p>${esc(t.hello(name))}</p><p style="font-size:16px;font-weight:700;color:#c2410c">${esc(t.overIntro(m))}</p>
-       <table role="presentation" width="100%" style="border-collapse:collapse">${row(t.target, money(target, lang))}${row(t.spent, money(spent, lang), '#c2410c')}${row(t.over, money(spent - target, lang), '#c2410c')}</table>
+       <table role="presentation" width="100%" style="border-collapse:collapse">${row(t.target, money(target, lang, currency))}${row(t.spent, money(spent, lang, currency), '#c2410c')}${row(t.over, money(spent - target, lang, currency), '#c2410c')}</table>
        <p>${esc(t.overTip)}</p>`
     ),
   };
 }
 
-function monthlyReport({ lang, name, month, totals, target }) {
+function monthlyReport({ lang, name, month, totals, target, currency = 'BDT' }) {
   const t = L(lang);
   const m = monthName(month, lang);
   let targetLine = '';
   if (target) {
     const over = totals.expense > target;
-    targetLine = row(`${t.target}: ${money(target, lang)}`, over ? t.overTarget : t.withinTarget, over ? '#c2410c' : '#2f7d32');
+    targetLine = row(`${t.target}: ${money(target, lang, currency)}`, over ? t.overTarget : t.withinTarget, over ? '#c2410c' : '#2f7d32');
   }
   return {
     subject: t.reportSubject(m),
-    text: `${t.hello(name)}\n\n${t.reportIntro(m)}\n\n${t.income}: ${money(totals.income, lang)}\n${t.expense}: ${money(totals.expense, lang)}\n${t.net}: ${money(totals.net, lang)}\n\n${t.reportOff}`,
+    text: `${t.hello(name)}\n\n${t.reportIntro(m)}\n\n${t.income}: ${money(totals.income, lang, currency)}\n${t.expense}: ${money(totals.expense, lang, currency)}\n${t.net}: ${money(totals.net, lang, currency)}\n\n${t.reportOff}`,
     html: layout(
       lang,
       `<p>${esc(t.hello(name))}</p><p>${esc(t.reportIntro(m))}</p>
        <table role="presentation" width="100%" style="border-collapse:collapse">
-         ${row(t.income, money(totals.income, lang), '#2f7d32')}${row(t.expense, money(totals.expense, lang), '#c2410c')}${row(t.net, money(totals.net, lang))}${targetLine}
+         ${row(t.income, money(totals.income, lang, currency), '#2f7d32')}${row(t.expense, money(totals.expense, lang, currency), '#c2410c')}${row(t.net, money(totals.net, lang, currency))}${targetLine}
        </table>
        <p style="color:#776c5d;font-size:13px;margin-top:18px">${esc(t.reportOff)}</p>`
     ),

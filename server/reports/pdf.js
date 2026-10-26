@@ -57,6 +57,9 @@ const LABELS = {
     page: 'Page',
     of: 'of',
     confidential: 'Confidential — generated from your encrypted Finance Baba account.',
+    currency: 'Currency',
+    currencyChanged: (from, to, date) => `Currency changed from ${from} to ${to} on ${date}.`,
+    convertedNote: (source, date) => `Entries made in another currency are converted at the exchange rate of ${date} (${source}); the original amount is shown below them.`,
     target: 'Monthly target',
     withinTarget: 'within target',
     overTarget: 'over target by',
@@ -96,19 +99,25 @@ const LABELS = {
     page: 'পৃষ্ঠা',
     of: '/',
     confidential: 'গোপনীয় — আপনার এনক্রিপ্টেড ফাইন্যান্স বাবা অ্যাকাউন্ট থেকে তৈরি।',
+    currency: 'মুদ্রা',
+    currencyChanged: (from, to, date) => `${date} তারিখে মুদ্রা ${from} থেকে ${to} করা হয়েছে।`,
+    convertedNote: (source, date) => `অন্য মুদ্রায় করা এন্ট্রিগুলো ${date} তারিখের বিনিময় হারে (${source}) রূপান্তর করা হয়েছে; মূল পরিমাণ নিচে দেখানো আছে।`,
     target: 'মাসিক লক্ষ্য',
     withinTarget: 'লক্ষ্যের মধ্যে',
     overTarget: 'লক্ষ্যের চেয়ে বেশি',
   },
 };
 
-function makeFormatters(lang) {
+// The font has no glyphs for most currency symbols, so other currencies are written with their code.
+const currencyPrefix = (code) => (code === 'BDT' ? '৳ ' : `${code} `);
+
+function makeFormatters(lang, currency = 'BDT') {
   const locale = lang === 'bn' ? 'bn-BD' : 'en-US';
   const num = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const int = new Intl.NumberFormat(locale);
   const dateLocale = lang === 'bn' ? 'bn-BD' : 'en-GB';
   return {
-    money: (n) => `${n < 0 ? '−' : ''}৳ ${num.format(Math.abs(n))}`,
+    money: (n, code = currency) => `${n < 0 ? '−' : ''}${currencyPrefix(code)}${num.format(Math.abs(n))}`,
     int: (n) => int.format(n),
     pct: (n) => `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(n)}%`,
     date: (d) => new Intl.DateTimeFormat(dateLocale, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(parse(d)),
@@ -127,7 +136,8 @@ function categoryName(type, id, lang) {
 /** Streams a PDF report for a month or a year into `out` (an HTTP response). */
 function writeReport(out, { lang, summary, profile, publicId, target = null }) {
   const L = LABELS[lang] || LABELS.en;
-  const f = makeFormatters(lang);
+  const currency = summary.currency || 'BDT';
+  const f = makeFormatters(lang, currency);
   const title = { week: L.weekTitle, month: L.monthTitle, year: L.yearTitle }[summary.period];
   // Start with our own font: otherwise pdfkit loads its built-in Helvetica through a dynamic require
   // that Vercel's bundler can't see, and PDF creation fails there.
@@ -161,7 +171,20 @@ function writeReport(out, { lang, summary, profile, publicId, target = null }) {
   doc.text(`${L.accountId}: ${publicId}`, left, metaY + 15);
   doc.text(`${L.period}: ${f.date(summary.range.start)} – ${f.date(summary.range.end)}`, left + width / 2, metaY);
   doc.text(`${L.generated}: ${f.date(summary.today)}`, left + width / 2, metaY + 15);
-  doc.y = metaY + 45;
+  doc.text(`${L.currency}: ${currency}`, left, metaY + 30);
+  doc.y = metaY + 50;
+
+  // ---- Currency changes (written into the report from the day they happened)
+  const changes = summary.currencyChanges || [];
+  const hasConverted = summary.entries.some((e) => e.converted);
+  if (changes.length || hasConverted) {
+    doc.fillColor(COLORS.muted).fontSize(9);
+    for (const ch of changes) doc.text(L.currencyChanged(ch.from, ch.to, f.date(ch.date)), left, doc.y, { width });
+    if (hasConverted && summary.ratesSource) {
+      doc.text(L.convertedNote(summary.ratesSource.source, f.date(new Date(summary.ratesSource.updatedAt).toISOString().slice(0, 10))), left, doc.y, { width });
+    }
+    doc.moveDown(0.6);
+  }
 
   // ---- Summary cards
   const t = summary.totals;
@@ -292,7 +315,7 @@ function writeReport(out, { lang, summary, profile, publicId, target = null }) {
         e.type === 'income' ? L.incomeShort : L.expenseShort,
         categoryName(e.type, e.category, lang),
         e.note,
-        `${e.type === 'income' ? '+' : '−'} ${f.money(e.amount)}`,
+        `${e.type === 'income' ? '+' : '−'} ${f.money(e.amount)}${e.converted ? `\n(${f.money(e.originalAmount, e.currency)})` : ''}`,
       ]),
       { rowColor: (row, i, idx) => (i === 4 ? (summary.entries[idx].type === 'income' ? COLORS.income : COLORS.expense) : null) }
     );

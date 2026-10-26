@@ -30,7 +30,7 @@ router.get('/pdf', async (req, res) => {
   const summary = await summarize(ctx, period, date);
   const row = await users.findById(ctx.userId);
   const name = { year: summary.range.start.slice(0, 4), month: summary.range.start.slice(0, 7), week: `week-${summary.range.start}` }[period];
-  const target = period === 'month' ? await targets.read(ctx.userId, ctx.dek, summary.range.start.slice(0, 7)) : null;
+  const target = period === 'month' ? await targets.read(ctx.userId, ctx.dek, summary.range.start.slice(0, 7), ctx.money) : null;
   // Build the whole file first: if anything fails we can still answer with a proper error instead of a broken download.
   let pdf;
   try {

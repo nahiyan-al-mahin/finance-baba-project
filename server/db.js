@@ -100,6 +100,13 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   reset_at BIGINT NOT NULL
 );
 
+-- Cached exchange rates (one row).
+CREATE TABLE IF NOT EXISTS fx_rates (
+  id         INTEGER PRIMARY KEY,
+  data       TEXT NOT NULL,
+  fetched_at BIGINT NOT NULL
+);
+
 -- Columns added after the first release (safe to run on an existing database).
 -- email_enc is encrypted with the server key so monthly reports can be sent while the user is offline;
 -- report_dek is the user's data key wrapped with the server key, present only while monthly email reports are on.

@@ -7,13 +7,23 @@ const c = require('../crypto');
 const { AppError } = require('../errors');
 const { todayIn, isValidDate } = require('../dates');
 const targets = require('../targets');
+const rates = require('../rates');
 
 const router = express.Router();
 
 async function context(req) {
   const row = await users.findById(req.session.userId);
   if (!row) throw new AppError(401, 'UNAUTHENTICATED');
-  return { userId: row.id, dek: req.session.dek, today: todayIn(row.timezone) };
+  const { currency, history } = users.currencyOf(users.getProfile(row, req.session.dek));
+  return {
+    userId: row.id,
+    dek: req.session.dek,
+    today: todayIn(row.timezone),
+    currency,
+    currencyHistory: history,
+    // Totals are shown in the user's currency; entries in other currencies are converted at the live rate.
+    money: { currency, rates: await rates.getRates() },
+  };
 }
 
 /** Changing anything on a day that has already passed needs a recent password confirmation. */
@@ -30,8 +40,8 @@ router.get('/', async (req, res) => {
   const ctx = await context(req);
   const date = req.query.date || ctx.today;
   if (!isValidDate(date)) throw new AppError(400, 'INVALID_DATE');
-  const list = await entries.listByRange(ctx.userId, ctx.dek, date, date);
-  res.json({ date, today: ctx.today, locked: date < ctx.today, entries: list, totals: entries.totals(list) });
+  const list = await entries.listByRange(ctx.userId, ctx.dek, date, date, ctx.money);
+  res.json({ date, today: ctx.today, locked: date < ctx.today, currency: ctx.currency, entries: list, totals: entries.totals(list) });
 });
 
 /** Re-checks the monthly target for every month touched; returns the result for the current month. */
@@ -47,7 +57,7 @@ async function checkTargets(ctx, ...dates) {
 
 router.post('/', async (req, res) => {
   const ctx = await context(req);
-  const input = entries.validate(req.body, ctx.today);
+  const input = entries.validate(req.body, ctx.today, ctx.currency);
   await assertCanModify(req, ctx, input.date);
   const entry = await entries.create(ctx.userId, ctx.dek, input);
   res.status(201).json({ entry, target: await checkTargets(ctx, input.date) });
@@ -56,7 +66,8 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const ctx = await context(req);
   const existing = await entries.getRow(ctx.userId, req.params.id);
-  const input = entries.validate(req.body, ctx.today);
+  // An edited entry keeps the currency it was entered in.
+  const input = entries.validate(req.body, ctx.today, entries.currencyOfRow(existing, ctx.dek));
   await assertCanModify(req, ctx, existing.entry_date, input.date);
   const entry = await entries.update(ctx.userId, ctx.dek, req.params.id, input);
   res.json({ entry, target: await checkTargets(ctx, existing.entry_date, input.date) });

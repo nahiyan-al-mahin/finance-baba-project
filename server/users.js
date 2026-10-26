@@ -230,6 +230,11 @@ function updateProfile(row, dek, profile) {
   return db.run('UPDATE users SET profile_enc = $1 WHERE id = $2', [c.encryptJSON(dek, profile, profileAad(row)), row.id]);
 }
 
+/** The user's chosen currency and when it was changed (stored in the encrypted profile). Default: Taka. */
+function currencyOf(profile) {
+  return { currency: profile.currency || 'BDT', history: profile.currencyHistory || [] };
+}
+
 /** The user's verified email address, or null. Readable without their password (needed for monthly reports). */
 function getEmail(row) {
   return row.email_verified && row.email_enc ? c.serverDecrypt(row.email_enc, emailAad(row)) : null;
@@ -265,6 +270,8 @@ function toPublic(row, dek) {
     role: row.role,
     displayName: profile.displayName,
     email: getEmail(row),
+    currency: currencyOf(profile).currency,
+    currencyHistory: currencyOf(profile).history,
     emailVerified: !!row.email_verified,
     reportsEnabled: !!row.report_dek,
     lang: row.lang,
@@ -299,6 +306,7 @@ module.exports = {
   emailAad,
   getEmail,
   setReports,
+  currencyOf,
   ensureDefaultReports,
   reportKey,
 };
