@@ -45,6 +45,14 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease bundleRelease
 
+      - name: Inspect the APK (package, permissions, exported parts, signature)
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          APK=$(ls android/app/build/outputs/apk/release/*.apk)
+          echo "== badging"; "$BT/aapt2" dump badging "$APK" | grep -E "^package:|uses-permission|sdkVersion|targetSdkVersion|application-label:"
+          echo "== manifest"; "$BT/aapt2" dump xmltree --file AndroidManifest.xml "$APK" | grep -E "E: (activity|service|provider|application)|exported|allowBackup|usesCleartextTraffic|E: data|host"
+          echo "== signature"; "$BT/apksigner" verify --verbose --print-certs "$APK" | grep -E "Verified using|Signer #1 certificate (DN|SHA-256)|Number of signers"
+
       - name: Summary
         run: |
           {
