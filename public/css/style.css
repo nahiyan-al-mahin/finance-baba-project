@@ -2657,3 +2657,22 @@ details.card[open] > summary {
   background: var(--well);
   font-weight: 600;
 }
+
+/* ---------- Install the app ---------- */
+.install-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  background: linear-gradient(160deg, var(--surface-hi), var(--brand-soft));
+}
+.install-card[hidden] {
+  display: none;
+}
+.install-art img {
+  display: block;
+  border-radius: 14px;
+  box-shadow: var(--sh-2);
+}
+.hero .install-card {
+  margin-top: 1.2rem;
+}

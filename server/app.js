@@ -86,6 +86,21 @@ api.use('/admin', requireAdmin, adminRoutes);
 api.use((req, res) => res.status(404).json({ error: 'NOT_FOUND' }));
 app.use('/api', api);
 
+// ---- Android app: proves to Chrome that the Play Store app belongs to this site, so it opens full-screen.
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.json(
+    config.ANDROID_CERT_SHA256.length
+      ? [
+          {
+            relation: ['delegate_permission/common.handle_all_urls'],
+            target: { namespace: 'android_app', package_name: config.ANDROID_PACKAGE, sha256_cert_fingerprints: config.ANDROID_CERT_SHA256 },
+          },
+        ]
+      : []
+  );
+});
+
 // ---- Static files
 app.use('/vendor/chart.js', express.static(path.join(config.ROOT, 'node_modules', 'chart.js', 'dist'), { maxAge: '7d' }));
 app.use('/shared', express.static(path.join(config.ROOT, 'shared')));

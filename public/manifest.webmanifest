@@ -1,9 +1,78 @@
 {
+  "id": "/app",
   "name": "Finance Baba",
   "short_name": "Finance Baba",
+  "description": "Track daily spending and income, loans and savings, with weekly, monthly and yearly reports. English and Bangla.",
+  "lang": "en",
+  "dir": "ltr",
   "start_url": "/app",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#faf5ea",
   "theme_color": "#0f766e",
-  "icons": [{ "src": "/img/logo.svg", "sizes": "any", "type": "image/svg+xml" }]
+  "categories": [
+    "finance",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "/img/app/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/app/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/app/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/img/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add an entry",
+      "short_name": "Add",
+      "url": "/app#daily",
+      "icons": [
+        {
+          "src": "/img/app/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Loans & Savings",
+      "short_name": "Loans",
+      "url": "/app#ledger",
+      "icons": [
+        {
+          "src": "/img/app/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "url": "/app#reports",
+      "icons": [
+        {
+          "src": "/img/app/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }

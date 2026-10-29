@@ -60,6 +60,12 @@ module.exports = {
   },
   MAIL_FROM: process.env.MAIL_FROM || process.env.SMTP_USER || '',
   MAIL_LOG: process.env.MAIL_LOG === '1', // development: print emails to the console instead of sending
+  // Android app (Play Store): package name and the SHA-256 fingerprint(s) of its signing key, comma-separated.
+  ANDROID_PACKAGE: process.env.ANDROID_PACKAGE || 'com.financebaba.app',
+  ANDROID_CERT_SHA256: (process.env.ANDROID_CERT_SHA256 || '')
+    .split(',')
+    .map((s) => s.trim().toUpperCase())
+    .filter((s) => /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(s)),
   APP_URL: (process.env.APP_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000')).replace(/\/$/, ''),
   CRON_SECRET: process.env.CRON_SECRET || '',
   TARGET_EDIT_DAYS: 3, // the monthly target can be set or changed on days 1-3 of the month

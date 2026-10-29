@@ -9,6 +9,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fb-test-'));
 process.env.DATA_DIR = tmp;
 process.env.APP_SECRET = 'a'.repeat(64);
 process.env.AUTH_RATE_LIMIT = '1000';
+process.env.ANDROID_CERT_SHA256 = 'ab:'.repeat(31) + 'CD, not-a-fingerprint';
 
 const { mail } = require('../server/mail');
 const outbox = mail.useTestTransport();
@@ -427,6 +428,17 @@ test('loans stay open until repaid; savings log and balance', async () => {
   assert.equal(r.status, 200);
   r = await eva('GET', '/loans');
   assert.equal(r.body.totals.owe, 0);
+});
+
+test('Android: assetlinks.json names the app and its signing key', async () => {
+  const res = await fetch(base.replace(/\/api$/, '') + '/.well-known/assetlinks.json');
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body[0].target.package_name, 'com.financebaba.app');
+  assert.deepEqual(body[0].target.sha256_cert_fingerprints, ['AB:'.repeat(31) + 'CD']);
+  for (const file of ['/manifest.webmanifest', '/sw.js', '/offline.html', '/img/app/maskable-512.png']) {
+    assert.equal((await fetch(base.replace(/\/api$/, '') + file)).status, 200, file);
+  }
 });
 
 test('cron endpoint requires the secret', async () => {

@@ -423,6 +423,10 @@ const dict = {
     'err.LOAN_SETTLED': 'This loan is already settled.',
     'err.PAYMENT_TOO_BIG': 'That is more than what is left on the loan.',
     'err.PAYMENT_BEFORE_LOAN': 'A repayment can\'t be before the loan date.',
+    'app.installTitle': 'Get the app',
+    'app.installBody': 'Install Finance Baba on your phone or computer. It opens like an app, with the same account and data.',
+    'app.installBtn': 'Install app',
+    'app.installIos': 'On iPhone: tap the Share button in Safari, then "Add to Home Screen".',
     'err.generic': 'Something went wrong. Please try again.',
   },
   bn: {
@@ -838,6 +842,10 @@ const dict = {
     'err.LOAN_SETTLED': 'এই ধার ইতিমধ্যে পরিশোধিত।',
     'err.PAYMENT_TOO_BIG': 'এটি ধারের বাকি টাকার চেয়ে বেশি।',
     'err.PAYMENT_BEFORE_LOAN': 'পরিশোধের তারিখ ধারের তারিখের আগে হতে পারে না।',
+    'app.installTitle': 'অ্যাপটি নিন',
+    'app.installBody': 'ফোন বা কম্পিউটারে ফাইন্যান্স বাবা ইনস্টল করুন। একই অ্যাকাউন্ট ও তথ্য নিয়ে এটি অ্যাপের মতো খুলবে।',
+    'app.installBtn': 'অ্যাপ ইনস্টল করুন',
+    'app.installIos': 'আইফোনে: Safari-তে শেয়ার বাটনে চাপুন, তারপর "Add to Home Screen" বেছে নিন।',
     'err.generic': 'কিছু একটা ভুল হয়েছে। আবার চেষ্টা করুন।',
   },
 };

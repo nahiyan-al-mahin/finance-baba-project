@@ -22,6 +22,14 @@ A mobile-friendly personal finance diary. Users log what they spend and what the
 | Privacy | Users see only their own data. Admins see **only counts and anonymous activity signals** and can send warnings that the user must acknowledge. |
 | Mobile | Responsive layout, bottom navigation on phones, safe-area support and an installable web-app manifest. |
 
+## Mobile app
+
+- **Install from the website:** Finance Baba is an installable web app. Use the **Install app** button on the
+  login page or in Settings, or *Add to Home screen* in Chrome, or *Share → Add to Home Screen* in Safari.
+- **Android / Google Play:** `android/` holds the Play Store app. It is a Trusted Web Activity that opens this
+  same site, so it uses the same database and accounts. GitHub Actions builds the APK and AAB.
+  See **[docs/ANDROID.md](docs/ANDROID.md)** for building, signing and publishing step by step.
+
 ## Tech stack
 
 The parts you already know: **HTML, CSS and vanilla JavaScript** in the browser, and **Node.js** on the server. A few small, well-known additions:
