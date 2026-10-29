@@ -1,0 +1,74 @@
+# Builds the Android app (android/) on GitHub's servers.
+# Download the results from the run page under "Artifacts":
+#   finance-baba-apk  -> install on a phone to try it
+#   finance-baba-aab  -> upload to Google Play Console
+# For Play, add these repository secrets first (Settings -> Secrets and variables -> Actions):
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+name: Android app
+
+on:
+  push:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      VERSION_CODE: ${{ github.run_number }}
+      KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Use the upload key (if the secrets are set)
+        if: env.KEYSTORE_B64 != ''
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          echo "FB_KEYSTORE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+          echo "FB_KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
+          echo "FB_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}" >> "$GITHUB_ENV"
+          echo "FB_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}" >> "$GITHUB_ENV"
+
+      - name: Build APK and App Bundle
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease bundleRelease
+
+      - name: Summary
+        run: |
+          {
+            echo "### Finance Baba ${VERSION_CODE}"
+            if [ -n "$KEYSTORE_B64" ]; then
+              echo "Signed with your upload key. Upload the **finance-baba-aab** artifact to Play Console."
+              echo
+              echo "Upload key SHA-256 (only needed before Play App Signing is set up):"
+              echo '```'
+              keytool -list -v -keystore "$FB_KEYSTORE" -storepass "$FB_KEYSTORE_PASSWORD" -alias "$FB_KEY_ALIAS" | grep 'SHA256:' | sed 's/.*SHA256: //'
+              echo '```'
+            else
+              echo "No upload key set: this build is signed with a test key. The APK installs fine on a phone, but Play will reject this AAB."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: finance-baba-apk
+          path: android/app/build/outputs/apk/release/*.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: finance-baba-aab
+          path: android/app/build/outputs/bundle/release/*.aab

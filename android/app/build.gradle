@@ -1,0 +1,77 @@
+/*
+ * Finance Baba for Android: a Trusted Web Activity that opens the live website full-screen in Chrome.
+ * Same site, same database, same accounts. Change the web address here if your site moves.
+ */
+plugins {
+    id 'com.android.application'
+}
+
+def twa = [
+    hostName       : 'finance-baba-project.vercel.app', // your website, without https://
+    launchPath     : '/app',
+    name           : 'Finance Baba',
+    themeColor     : '#0F766E',
+    navigationColor: '#FAF5EA',
+    backgroundColor: '#FAF5EA',
+]
+
+// Signing for Play: environment variables (GitHub Actions) or android/keystore.properties (your PC).
+def signing = new Properties()
+def signingFile = rootProject.file('keystore.properties')
+if (signingFile.exists()) signingFile.withInputStream { signing.load(it) }
+def secret = { String env, String prop -> System.getenv(env) ?: signing.getProperty(prop) }
+def storePath = secret('FB_KEYSTORE', 'storeFile')
+
+android {
+    namespace 'com.financebaba.app'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.financebaba.app'
+        minSdk 23
+        targetSdk 36
+        // Every upload to Play needs a higher number; CI uses its run number.
+        versionCode((System.getenv('VERSION_CODE') ?: '1').toInteger())
+        versionName '1.0.' + (System.getenv('VERSION_CODE') ?: '0')
+
+        resValue 'string', 'appName', twa.name
+        resValue 'string', 'launcherName', twa.name
+        resValue 'string', 'hostName', twa.hostName
+        resValue 'string', 'launchUrl', "https://${twa.hostName}${twa.launchPath}"
+        resValue 'string', 'providerAuthority', 'com.financebaba.app.fileprovider'
+        // Lets Chrome trust this app for the site (the site answers with /.well-known/assetlinks.json).
+        resValue 'string', 'assetStatements',
+            "[{ \\\"relation\\\": [\\\"delegate_permission/common.handle_all_urls\\\"], \\\"target\\\": {\\\"namespace\\\": \\\"web\\\", \\\"site\\\": \\\"https://${twa.hostName}\\\"}}]"
+        resValue 'color', 'colorPrimary', twa.themeColor
+        resValue 'color', 'navigationColor', twa.navigationColor
+        resValue 'color', 'backgroundColor', twa.backgroundColor
+    }
+
+    signingConfigs {
+        if (storePath) {
+            release {
+                storeFile file(storePath)
+                storePassword secret('FB_KEYSTORE_PASSWORD', 'storePassword')
+                keyAlias secret('FB_KEY_ALIAS', 'keyAlias')
+                keyPassword secret('FB_KEY_PASSWORD', 'keyPassword')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // Without a keystore the release is signed with the debug key: fine for trying it, not for Play.
+            signingConfig storePath ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.6.2'
+}
