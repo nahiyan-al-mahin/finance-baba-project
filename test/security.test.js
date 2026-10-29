@@ -11,6 +11,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fb-sec-'));
 process.env.DATA_DIR = tmp;
 process.env.APP_SECRET = 'c'.repeat(64);
 process.env.NODE_ENV = 'production';
+process.env.AUTH_RATE_LIMIT = '1000'; // the per-account lockout is what's tested below
 process.env.ANDROID_CERT_SHA256 = 'AB:'.repeat(31) + 'CD';
 require('../server/rates').setRatesForTests({ BDT: 120, USD: 1 });
 const app = require('../server/app');

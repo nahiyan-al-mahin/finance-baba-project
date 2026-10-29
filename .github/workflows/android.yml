@@ -28,7 +28,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       - name: Use the upload key (if the secrets are set)
         if: env.KEYSTORE_B64 != ''
@@ -69,12 +69,12 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: finance-baba-apk
           path: android/app/build/outputs/apk/release/*.apk
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: finance-baba-aab
           path: android/app/build/outputs/bundle/release/*.aab

@@ -29,6 +29,8 @@ A mobile-friendly personal finance diary. Users log what they spend and what the
 - **Android / Google Play:** `android/` holds the Play Store app. It is a Trusted Web Activity that opens this
   same site, so it uses the same database and accounts. GitHub Actions builds the APK and AAB.
   See **[docs/ANDROID.md](docs/ANDROID.md)** for building, signing and publishing step by step.
+- **iPhone / App Store:** see **[docs/IOS.md](docs/IOS.md)**.
+- **Security tests:** `npm test` includes `test/security.test.js`, 99 black-box checks against a production-mode server.
 
 ## Tech stack
 
