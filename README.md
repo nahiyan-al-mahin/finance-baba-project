@@ -91,7 +91,7 @@ Admins log in on the normal login page and are sent to `/admin`.
 ### Enabling "Continue with Google"
 
 1. Open the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) and go to **Create credentials → OAuth client ID → Web application**.
-2. Under **Authorized JavaScript origins**, add your sites, e.g. `http://localhost:3000` and `https://your-app.vercel.app`.
+2. Under **Authorized JavaScript origins**, add your sites, e.g. `http://localhost:3000` and `https://financebaba.vercel.app`.
 3. Put the client ID in `.env` (and in Vercel's environment variables) as `GOOGLE_CLIENT_ID=...apps.googleusercontent.com` and restart / redeploy.
 
 The Google button appears only when `GOOGLE_CLIENT_ID` is set. First-time Google users still choose a username and password: the password protects past days and works as a fallback login. Existing users can connect or disconnect Google under **Settings**.

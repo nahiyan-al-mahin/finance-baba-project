@@ -7,7 +7,7 @@ plugins {
 }
 
 def twa = [
-    hostName       : 'finance-baba-project.vercel.app', // your website, without https://
+    hostName       : 'financebaba.vercel.app', // your website, without https://
     launchPath     : '/app',
     name           : 'Finance Baba',
     themeColor     : '#0F766E',

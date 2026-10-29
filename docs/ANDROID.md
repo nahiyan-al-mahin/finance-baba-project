@@ -20,7 +20,7 @@ There are two ways people can get the app:
 Open `android/app/build.gradle` and look at the `hostName` line at the top:
 
 ```groovy
-hostName: 'finance-baba-project.vercel.app', // your website, without https://
+hostName: 'financebaba.vercel.app', // your website, without https://
 ```
 
 It must be the exact address people use to open the site, without `https://`. If you add your own domain
@@ -64,7 +64,7 @@ Without these secrets the build is signed with a test key. That build installs o
 
 1. **Create app** → App name **Finance Baba**, default language (English or Bangla), **App**, **Free**. Accept the declarations.
 2. **Dashboard → Set up your app**. Complete every item:
-   - **Privacy policy**: use `https://your-site/privacy`. The page is already part of the website.
+   - **Privacy policy**: use `https://financebaba.vercel.app/privacy`. The page is already part of the website.
    - **App access**: choose *All or some functionality is restricted* and give the reviewer a test login
      (create a demo user with a few entries).
    - **Ads**: *No*.
@@ -101,7 +101,7 @@ The app opens full-screen only after the website confirms the app is really your
 3. Vercel → your project → **Settings → Environment Variables** → add:
    - `ANDROID_CERT_SHA256` = that fingerprint. To also trust APKs you build yourself, add the upload key's
      fingerprint after a comma.
-4. **Redeploy** on Vercel. Then open `https://your-site/.well-known/assetlinks.json`. It should show
+4. **Redeploy** on Vercel. Then open `https://financebaba.vercel.app/.well-known/assetlinks.json`. It should show
    `com.financebaba.app` and your fingerprint.
 
 If you skip this, the app still works, but it shows a small address bar at the top.
