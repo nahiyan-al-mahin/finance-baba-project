@@ -12,7 +12,7 @@ import { renderEmailWidget } from './email.js';
 import { initConvert, loadConvert, renderCurrencyCard } from './convert.js';
 import { initLedger, loadLedger, loadLoans, refreshLedgerText } from './ledger.js';
 
-const state = { user: null, today: null, date: null, unlockedUntil: 0, view: 'daily', entries: [] };
+const state = { user: null, today: null, date: null, unlockedUntil: 0, view: 'daily', entries: [], quiet: false };
 // Shared with the email widgets (Settings card and the confirm-email gate).
 const emailState = { user: null, pendingEmail: null, emailEnabled: false };
 const widgets = [];
@@ -121,9 +121,12 @@ function renderEntries(totals) {
   $('#day-income').textContent = fmt.money(totals.income);
   $('#day-net').textContent = fmt.money(totals.net);
   $('#day-total').textContent = fmt.money(totals.expense);
+  renderQuietDay();
   const list = $('#entry-list');
   if (!state.entries.length) {
-    list.innerHTML = `<li class="empty"><span class="empty-art">${icon('inbox')}</span>${escapeHtml(t('daily.empty'))}</li>`;
+    list.innerHTML = state.quiet
+      ? `<li class="empty quiet"><span class="empty-art">${icon('check-circle')}</span>${escapeHtml(t('quiet.emptyMarked'))}</li>`
+      : `<li class="empty"><span class="empty-art">${icon('inbox')}</span>${escapeHtml(t('daily.empty'))}</li>`;
     return;
   }
   list.innerHTML = state.entries
@@ -153,9 +156,33 @@ async function loadDay(date = state.date) {
   state.date = data.date;
   state.today = data.today;
   state.entries = data.entries;
+  state.quiet = !!data.quiet;
   lastTotals = data.totals;
   renderDayHeader();
   renderEntries(data.totals);
+}
+
+// ---------- "no income or expense" day (keeps the streak going) ----------
+function renderQuietDay() {
+  const isToday = state.date === state.today;
+  const hasEntries = state.entries.length > 0;
+  const btn = $('#quiet-btn');
+  btn.disabled = hasEntries;
+  btn.classList.toggle('marked', state.quiet && !hasEntries);
+  btn.setAttribute('aria-pressed', String(state.quiet && !hasEntries));
+  $('#quiet-label').textContent = state.quiet && !hasEntries ? t('quiet.undo') : t(isToday ? 'quiet.markToday' : 'quiet.markDay');
+  $('#quiet-hint').textContent = hasEntries ? t('quiet.hintHasEntries') : state.quiet ? t('quiet.hintMarked') : t('quiet.hintEmpty');
+}
+
+async function toggleQuietDay() {
+  if (state.entries.length) return;
+  const date = state.date;
+  const res = await withUnlock(() => (state.quiet ? del(`/entries/quiet/${date}`) : post('/entries/quiet', { date })));
+  if (!res) return;
+  toast(t(res.quiet ? 'quiet.markedToast' : 'quiet.unmarkedToast'));
+  invalidateMarks();
+  refreshSidebar();
+  await loadDay(date);
 }
 
 function updateAddFormType(type) {
@@ -193,6 +220,8 @@ function initDaily() {
       }
     });
   });
+
+  $('#quiet-btn').addEventListener('click', () => toggleQuietDay().catch(handleError));
 
   $('#entry-list').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-action]');

@@ -8,6 +8,7 @@ const { AppError } = require('../errors');
 const { todayIn, isValidDate } = require('../dates');
 const targets = require('../targets');
 const rates = require('../rates');
+const quietDays = require('../quietDays');
 
 const router = express.Router();
 
@@ -41,7 +42,8 @@ router.get('/', async (req, res) => {
   const date = req.query.date || ctx.today;
   if (!isValidDate(date)) throw new AppError(400, 'INVALID_DATE');
   const list = await entries.listByRange(ctx.userId, ctx.dek, date, date, ctx.money);
-  res.json({ date, today: ctx.today, locked: date < ctx.today, currency: ctx.currency, entries: list, totals: entries.totals(list) });
+  const quiet = !list.length && (await quietDays.isQuiet(ctx.userId, date));
+  res.json({ date, today: ctx.today, locked: date < ctx.today, currency: ctx.currency, quiet, entries: list, totals: entries.totals(list) });
 });
 
 /** Re-checks the monthly target for every month touched; returns the result for the current month. */
@@ -60,7 +62,25 @@ router.post('/', async (req, res) => {
   const input = entries.validate(req.body, ctx.today, ctx.currency);
   await assertCanModify(req, ctx, input.date);
   const entry = await entries.create(ctx.userId, ctx.dek, input);
+  await quietDays.unmark(ctx.userId, input.date); // the day has money in or out after all
   res.status(201).json({ entry, target: await checkTargets(ctx, input.date) });
+});
+
+// Mark a day as "no income or expense" (only while it has no entries), or undo that.
+router.post('/quiet', async (req, res) => {
+  const ctx = await context(req);
+  const day = quietDays.validDay(String(req.body?.date || ''), ctx.today);
+  await assertCanModify(req, ctx, day);
+  await quietDays.mark(ctx, day);
+  res.status(201).json({ date: day, quiet: true });
+});
+
+router.delete('/quiet/:date', async (req, res) => {
+  const ctx = await context(req);
+  const day = quietDays.validDay(String(req.params.date), ctx.today);
+  await assertCanModify(req, ctx, day);
+  await quietDays.unmark(ctx.userId, day);
+  res.json({ date: day, quiet: false });
 });
 
 router.put('/:id', async (req, res) => {
@@ -70,6 +90,7 @@ router.put('/:id', async (req, res) => {
   const input = entries.validate(req.body, ctx.today, entries.currencyOfRow(existing, ctx.dek));
   await assertCanModify(req, ctx, existing.entry_date, input.date);
   const entry = await entries.update(ctx.userId, ctx.dek, req.params.id, input);
+  await quietDays.unmark(ctx.userId, input.date);
   res.json({ entry, target: await checkTargets(ctx, existing.entry_date, input.date) });
 });
 

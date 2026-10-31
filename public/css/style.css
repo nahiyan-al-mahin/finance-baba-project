@@ -2676,3 +2676,28 @@ details.card[open] > summary {
 .hero .install-card {
   margin-top: 1.2rem;
 }
+
+/* ---------- No-money day ---------- */
+.quiet-day {
+  margin-top: 0.85rem;
+  text-align: center;
+}
+.quiet-day .btn.marked {
+  color: var(--income);
+  background: linear-gradient(180deg, var(--surface-hi), var(--income-soft));
+  border-color: color-mix(in srgb, var(--income) 35%, var(--border));
+}
+.quiet-day .btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.quiet-day p {
+  margin: 0.45rem 0 0;
+}
+.empty.quiet .empty-art {
+  color: var(--income);
+}
+.cal-dot.quiet {
+  background: transparent;
+  border: 1.5px dashed var(--muted);
+}

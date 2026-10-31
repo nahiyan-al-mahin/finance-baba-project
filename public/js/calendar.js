@@ -31,7 +31,7 @@ function monthMarks(s) {
     marks.set(
       key,
       get(`/reports/summary?period=month&date=${key}-01`)
-        .then((r) => new Map(r.series.filter((b) => b.count).map((b) => [b.key, b])))
+        .then((r) => new Map(r.series.filter((b) => b.count || b.quiet).map((b) => [b.key, b])))
         .catch(() => new Map())
     );
   }
@@ -49,7 +49,8 @@ async function marksFor(days) {
   return (d) => maps[months.indexOf(d.slice(0, 7))].get(d);
 }
 
-const dotFor = (b) => (!b ? '' : b.expense > 0 ? '<span class="cal-dot"></span>' : '<span class="cal-dot income"></span>');
+const dotFor = (b) =>
+  !b ? '' : b.quiet ? '<span class="cal-dot quiet"></span>' : b.expense > 0 ? '<span class="cal-dot"></span>' : '<span class="cal-dot income"></span>';
 
 // ---------- week strip ----------
 /** Renders the 7 days around `selected` into `el`. */

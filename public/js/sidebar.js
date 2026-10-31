@@ -22,16 +22,16 @@ function initials(name) {
   );
 }
 
-/** Consecutive days (ending today, or yesterday if today is still empty) that have at least one entry. */
+/** Consecutive days (ending today, or yesterday if today is still empty) with an entry or marked "no income or expense". */
 async function streak(today, month) {
-  const logged = new Set(month.series.filter((b) => b.count).map((b) => b.key));
+  const logged = new Set(month.series.filter((b) => b.count || b.quiet).map((b) => b.key));
   let day = logged.has(today) ? today : addDays(today, -1);
   let n = 0;
   let loadedMonth = today.slice(0, 7);
   for (let guard = 0; guard < 400; guard++) {
     if (day.slice(0, 7) !== loadedMonth) {
       const older = await get(`/reports/summary?period=month&date=${day}`);
-      older.series.filter((b) => b.count).forEach((b) => logged.add(b.key));
+      older.series.filter((b) => b.count || b.quiet).forEach((b) => logged.add(b.key));
       loadedMonth = day.slice(0, 7);
     }
     if (!logged.has(day)) break;

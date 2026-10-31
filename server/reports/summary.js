@@ -2,6 +2,7 @@
 const { periodRange, previousAnchor, eachDay } = require('../dates');
 const entries = require('../entries');
 const ledger = require('../ledger');
+const quietDays = require('../quietDays');
 
 const round = (n) => Math.round(n * 100) / 100;
 
@@ -46,6 +47,11 @@ async function summarize(ctx, period, anchor) {
   const expenses = list.filter((e) => e.type === 'expense');
   const biggest = expenses.reduce((max, e) => (!max || e.amount > max.amount ? e : max), null);
   const s = series(list, period, range);
+  // Days marked "no income or expense" count for the logging streak and get their own calendar mark.
+  if (period !== 'year') {
+    const quiet = await quietDays.inRange(userId, range.start, range.end);
+    for (const b of s) if (!b.count && quiet.has(b.key)) b.quiet = true;
+  }
   const busiest = s.filter((b) => b.expense > 0).sort((a, b) => b.expense - a.expense)[0] || null;
   const savings = await ledger.savingsForRange(ctx, range.start, range.end);
   const loans = await ledger.loansForReport(ctx, range.end);

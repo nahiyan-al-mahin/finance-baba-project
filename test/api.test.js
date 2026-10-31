@@ -441,6 +441,41 @@ test('Android: assetlinks.json names the app and its signing key', async () => {
   }
 });
 
+test('quiet day: only on an empty day, keeps the streak, cleared by an entry', async () => {
+  const q = client();
+  await q('POST', '/auth/signup', { email: 'quiet@example.com', username: 'quietday', displayName: 'Q', password: 'quiet12345', timezone: 'Asia/Dhaka' });
+
+  let r = await q('POST', '/entries/quiet', { date: today });
+  assert.equal(r.status, 201);
+  r = await q('GET', `/entries?date=${today}`);
+  assert.equal(r.body.quiet, true);
+  r = await q('GET', '/reports/summary?period=month');
+  assert.equal(r.body.series.find((b) => b.key === today).quiet, true);
+
+  // Future and past days follow the usual rules
+  r = await q('POST', '/entries/quiet', { date: addDays(today, 1) });
+  assert.equal(r.body.error, 'FUTURE_DATE');
+  r = await q('POST', '/entries/quiet', { date: yesterday });
+  assert.equal(r.body.error, 'PAST_DAY_LOCKED');
+
+  // Adding an entry removes the mark, and a day with entries can't be marked
+  await q('POST', '/entries', { date: today, type: 'expense', amount: 20, category: 'food', note: 'Tea' });
+  r = await q('GET', `/entries?date=${today}`);
+  assert.equal(r.body.quiet, false);
+  r = await q('POST', '/entries/quiet', { date: today });
+  assert.equal(r.body.error, 'DAY_HAS_ENTRIES');
+
+  // Undo
+  const entryId = (await q('GET', `/entries?date=${today}`)).body.entries[0].id;
+  await q('DELETE', `/entries/${entryId}`);
+  r = await q('POST', '/entries/quiet', { date: today });
+  assert.equal(r.status, 201);
+  r = await q('DELETE', `/entries/quiet/${today}`);
+  assert.equal(r.body.quiet, false);
+  r = await q('GET', `/entries?date=${today}`);
+  assert.equal(r.body.quiet, false);
+});
+
 test('cron endpoint requires the secret', async () => {
   const res = await fetch(`${base}/cron/monthly-reports`);
   assert.equal(res.status, 401);

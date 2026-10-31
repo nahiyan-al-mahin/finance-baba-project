@@ -120,6 +120,14 @@ CREATE TABLE IF NOT EXISTS savings (
 );
 CREATE INDEX IF NOT EXISTS idx_savings_user_date ON savings(user_id, entry_date);
 
+-- Days marked "no income or expense" (keeps the logging streak going).
+CREATE TABLE IF NOT EXISTS quiet_days (
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  day        TEXT NOT NULL,
+  created_at BIGINT NOT NULL,
+  PRIMARY KEY (user_id, day)
+);
+
 -- Cached exchange rates (one row).
 CREATE TABLE IF NOT EXISTS fx_rates (
   id         INTEGER PRIMARY KEY,
