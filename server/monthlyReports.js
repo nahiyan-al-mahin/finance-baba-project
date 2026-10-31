@@ -57,8 +57,16 @@ async function sendOne(row) {
 
 /** Sends every report that is due. Returns counts, for logs and the cron response. */
 async function runMonthlyReports() {
-  const result = { sent: 0, empty: 0, skipped: 0, failed: 0, pending: 0 };
-  if (!mail.enabled()) return { ...result, disabled: true };
+  const result = { sent: 0, alreadySent: 0, empty: 0, skipped: 0, failed: 0, pending: 0 };
+  if (!mail.enabled()) return { ...result, disabled: true, reason: 'Email is not set up (SMTP_* variables missing)' };
+  // Who can't get a report, so the logs explain a missing email.
+  const counts = await db.one(
+    `SELECT COUNT(*) FILTER (WHERE email_verified = 1 AND report_dek IS NOT NULL) AS eligible,
+            COUNT(*) FILTER (WHERE email_verified IS DISTINCT FROM 1) AS "emailNotConfirmed",
+            COUNT(*) FILTER (WHERE email_verified = 1 AND report_dek IS NULL) AS "reportsTurnedOff"
+       FROM users WHERE role = 'user'`
+  );
+  Object.assign(result, { eligibleUsers: Number(counts.eligible), emailNotConfirmed: Number(counts.emailNotConfirmed), reportsTurnedOff: Number(counts.reportsTurnedOff) });
   const started = Date.now();
   const rows = await db.all(
     "SELECT * FROM users WHERE role = 'user' AND email_verified = 1 AND report_dek IS NOT NULL ORDER BY last_report_month NULLS FIRST, id"
@@ -70,7 +78,7 @@ async function runMonthlyReports() {
     }
     try {
       const outcome = await sendOne(row);
-      if (outcome !== 'up-to-date') result[outcome]++;
+      result[outcome === 'up-to-date' ? 'alreadySent' : outcome]++;
     } catch (err) {
       result.failed++;
       console.error(`[finance-baba] Monthly report for ${row.public_id} failed:`, err.message);

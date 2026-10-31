@@ -292,8 +292,13 @@ test('monthly target: only on days 1-3, over-target alert and email once', async
     assert.ok(report, 'report email sent');
     assert.equal(report.attachments[0].content.subarray(0, 4).toString(), '%PDF');
     const count = outbox.filter((m) => m.attachments).length;
-    await runMonthlyReports();
+    const second = await runMonthlyReports();
     assert.equal(outbox.filter((m) => m.attachments).length, count); // not sent twice
+    assert.ok(second.alreadySent >= 1 && second.eligibleUsers >= 1);
+
+    // The job runs at 19:15 UTC, which is already 1:15 AM on the 1st in Bangladesh: that month is reported then.
+    at('2026-12-31T19:15:00Z');
+    assert.equal(dates.todayIn('Asia/Dhaka'), '2027-01-01');
   } finally {
     dates.setClock(null);
   }

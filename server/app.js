@@ -56,10 +56,16 @@ api.get('/health', (req, res) => res.json({ ok: true })); // for hosting platfor
 
 // Vercel Cron calls this once a day with "Authorization: Bearer <CRON_SECRET>".
 api.get('/cron/monthly-reports', async (req, res) => {
-  if (!config.CRON_SECRET || req.get('authorization') !== `Bearer ${config.CRON_SECRET}`) {
+  if (!config.CRON_SECRET) {
+    console.error('[finance-baba] Monthly reports: CRON_SECRET is not set in the environment, so the job cannot run.');
+    return res.status(401).json({ error: 'UNAUTHENTICATED', reason: 'CRON_SECRET is not set' });
+  }
+  if (req.get('authorization') !== `Bearer ${config.CRON_SECRET}`) {
     return res.status(401).json({ error: 'UNAUTHENTICATED' });
   }
-  res.json(await runMonthlyReports());
+  const result = await runMonthlyReports();
+  console.log('[finance-baba] Monthly reports:', JSON.stringify(result));
+  res.json(result);
 });
 api.use(cookieParser());
 api.use((req, res, next) => {
