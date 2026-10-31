@@ -56,7 +56,7 @@ No frontend framework or build step is involved: edit a file and refresh the pag
 
 Gmail allows about 500 emails a day, plenty for a personal project. Any other SMTP service (Brevo, Zoho, …) works the same way. Until email is set up, sign-up still works and the email step is skipped.
 
-Month-end reports are sent by a daily job: on Vercel by **Vercel Cron** (`vercel.json`, needs `CRON_SECRET`), on your own server by a timer inside `npm start`. Each user's previous month is sent once, according to their own time zone.
+Month-end reports are sent by a daily job: on Vercel by **Vercel Cron** at 19:00 UTC, which is 1:00 AM in Bangladesh (`vercel.json`, needs `CRON_SECRET`), on your own server by a timer inside `npm start`. Each user's previous month is sent once, according to their own time zone.
 
 ## How the encryption works
 
